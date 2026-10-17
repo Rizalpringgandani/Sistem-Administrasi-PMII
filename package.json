@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "build:editor": "esbuild src/client/editor-entry.js --bundle --minify --outfile=public/js/tiptap-bundle.js",
-    "test": "node tests/test_tahap1.js && node tests/test_http.js && node tests/test_tahap2.js"
+    "test": "node tests/test_tahap1.js && node tests/test_http.js && node tests/test_tahap2.js && node tests/test_tahap3.js"
   },
   "keywords": [
     "pmii",
@@ -30,6 +30,7 @@
     "@tiptap/extension-underline": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
     "bcryptjs": "^3.0.3",
+    "docx": "^9.12.0",
     "express": "^5.3.0",
     "express-session": "^1.19.0",
     "multer": "^2.4.0"

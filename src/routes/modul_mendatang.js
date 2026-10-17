@@ -5,18 +5,6 @@ const { getAllPengaturan } = require('../database/db');
 const { renderLayout } = require('../views/layout');
 
 const infoModul = {
-  '/surat': {
-    judul: 'Pembuatan Surat & Penomoran Otomatis',
-    tahap: 'Tahap 3',
-    menu: 'surat',
-    deskripsi: 'Modul surat keluar/masuk dari template dengan penomoran otomatis standar PMII dan arsip dokumen.'
-  },
-  '/arsip': {
-    judul: 'Arsip Dokumen Rayon',
-    tahap: 'Tahap 3',
-    menu: 'arsip',
-    deskripsi: 'Modul pencarian cepat dan penyimpanan seluruh arsip surat, proposal, dan SK rayon.'
-  },
   '/kader': {
     judul: 'Data Kader PMII',
     tahap: 'Tahap 4',

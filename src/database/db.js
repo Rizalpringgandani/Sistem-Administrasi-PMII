@@ -130,6 +130,17 @@ function inisialisasiDatabase() {
     );
   `);
 
+  // Migrasi aman untuk kolom konten_json pada template dan dokumen
+  const templateCols = db.prepare('PRAGMA table_info(template)').all().map(c => c.name);
+  if (!templateCols.includes('konten_json')) {
+    db.exec('ALTER TABLE template ADD COLUMN konten_json TEXT;');
+  }
+
+  const dokumenCols = db.prepare('PRAGMA table_info(dokumen)').all().map(c => c.name);
+  if (!dokumenCols.includes('konten_json')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN konten_json TEXT;');
+  }
+
   seedingDataAwal();
 }
 
@@ -196,6 +207,290 @@ function seedingDataAwal() {
       'Sahabat Sekretaris Rayon'
     );
   }
+
+  // 5. Template Surat Resmi Bawaan PMII
+  const countTemplate = db.prepare('SELECT COUNT(*) as count FROM template').get();
+  if (countTemplate.count === 0) {
+    const insertTemplate = db.prepare(`
+      INSERT INTO template (kode, judul, jenis, kategori, konten_html, konten_json, variabel_daftar, is_bawaan)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+
+    // Template 1: Surat Undangan
+    const tplUndanganJson = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Nomor\t: ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nomor_surat}}' },
+            { type: 'text', text: '\nLampiran\t: {{lampiran}}\nPerihal\t: ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: 'UNDANGAN {{nama_kegiatan}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'right' },
+          content: [
+            { type: 'text', text: '{{tempat_surat}}, {{tanggal_surat}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Kepada Yth.\n' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{tujuan}}\n' },
+            { type: 'text', text: 'di -\n\t{{tempat_tujuan}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: "Assalamu'alaikum Warahmatullahi Wabarakatuh" }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Salam silaturrahim teriring do'a kami sampaikan semoga Sahabat/i senantiasa dalam lindungan Allah SWT serta eksis dalam menjalankan aktivitas keseharian. Aamiin." }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Sehubungan dengan akan diselenggarakannya agenda " },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nama_kegiatan}}' },
+            { type: 'text', text: ' oleh Pengurus Rayon Pergerakan Mahasiswa Islam Indonesia (PMII), maka dengan ini kami mengundang Sahabat/i untuk dapat hadir pada:' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hari, Tanggal' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{hari_tanggal}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Waktu' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{waktu}} WIB s/d Selesai' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tempat' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{tempat}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Acara' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{nama_kegiatan}}' }] }] }
+              ]
+            }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: 'Demikian surat undangan ini kami sampaikan. Atas perhatian, perkenan, dan kehadiran Sahabat/i kami ucapkan banyak terima kasih.' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: 'Wallahul Muwaffiq Ila Aqwamith Tharieq\nWassalamu’alaikum Warahmatullahi Wabarakatuh' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Ketua Rayon' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\n\n\n' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_ketua}}' }] }
+                  ]
+                },
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Sekretaris Rayon' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\n\n\n' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_sekretaris}}' }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const varsUndangan = ['nomor_surat', 'lampiran', 'nama_kegiatan', 'tempat_surat', 'tanggal_surat', 'tujuan', 'tempat_tujuan', 'hari_tanggal', 'waktu', 'tempat', 'nama_ketua', 'nama_sekretaris'];
+
+    insertTemplate.run(
+      'TPL-UND-01',
+      'Surat Undangan Resmi Kegiatan',
+      'surat_keluar',
+      'Undangan',
+      '',
+      JSON.stringify(tplUndanganJson),
+      JSON.stringify(varsUndangan)
+    );
+
+    // Template 2: Permohonan Peminjaman Tempat
+    const tplMohonJson = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Nomor\t: ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nomor_surat}}' },
+            { type: 'text', text: '\nLampiran\t: {{lampiran}}\nPerihal\t: ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: 'PERMOHONAN IZIN TEMPAT {{nama_kegiatan}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'right' },
+          content: [
+            { type: 'text', text: '{{tempat_surat}}, {{tanggal_surat}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Kepada Yth.\n' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{tujuan}}\n' },
+            { type: 'text', text: 'di -\n\t{{tempat_tujuan}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: "Assalamu'alaikum Warahmatullahi Wabarakatuh" }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Salam silaturrahim teriring do'a kami sampaikan semoga Bapak/Ibu senantiasa dalam lindungan Allah SWT serta dimudahkan dalam setiap aktivitas. Aamiin." }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Sehubungan dengan pelaksanaan kegiatan " },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nama_kegiatan}}' },
+            { type: 'text', text: ' oleh Pengurus Rayon PMII, maka dengan ini kami memohon izin penggunaan fasilitas tempat pada:' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hari, Tanggal' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{hari_tanggal}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Waktu' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{waktu}} WIB s/d Selesai' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tempat / Ruangan' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '{{tempat}}' }] }] }
+              ]
+            }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: 'Demikian permohonan ini kami sampaikan. Besar harapan kami atas perkenan dan izin Bapak/Ibu. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: 'Wallahul Muwaffiq Ila Aqwamith Tharieq\nWassalamu’alaikum Warahmatullahi Wabarakatuh' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Ketua Rayon' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\n\n\n' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_ketua}}' }] }
+                  ]
+                },
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Sekretaris Rayon' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\n\n\n' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_sekretaris}}' }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const varsMohon = ['nomor_surat', 'lampiran', 'nama_kegiatan', 'tempat_surat', 'tanggal_surat', 'tujuan', 'tempat_tujuan', 'hari_tanggal', 'waktu', 'tempat', 'nama_ketua', 'nama_sekretaris'];
+
+    insertTemplate.run(
+      'TPL-MOHON-01',
+      'Surat Permohonan Izin Tempat & Fasilitas',
+      'surat_keluar',
+      'Permohonan',
+      '',
+      JSON.stringify(tplMohonJson),
+      JSON.stringify(varsMohon)
+    );
+  }
 }
 
 /**
@@ -245,6 +540,97 @@ function setMultiplePengaturan(obj) {
   }
 }
 
+/**
+ * Konversi indeks bulan ke angka Romawi
+ */
+function toAngkaRomawi(bulanIndex) {
+  const romawi = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  return romawi[bulanIndex] || 'I';
+}
+
+/**
+ * Usulkan nomor surat otomatis sesuai format di pengaturan dan nomor urut tahun ini
+ */
+function generateNomorSurat(kodeKategori = '01') {
+  const format = getPengaturan('format_nomor_surat', '{no}/{kd}/{rayon}/PMII/{romawi}/{tahun}');
+  const now = new Date();
+  const tahunSekarang = String(now.getFullYear());
+  const bulanRomawi = toAngkaRomawi(now.getMonth());
+  const kodeRayon = getPengaturan('kode_rayon', 'PR-PMII');
+
+  // Hitung jumlah surat keluar yang terdaftar pada tahun berjalan
+  const row = db.prepare(`
+    SELECT COUNT(*) as total 
+    FROM dokumen 
+    WHERE jenis = 'surat_keluar' 
+    AND (strftime('%Y', created_at) = ? OR tanggal_dokumen LIKE ?)
+  `).get(tahunSekarang, `%${tahunSekarang}%`);
+
+  const urut = (row ? row.total : 0) + 1;
+  const noFormatted = String(urut).padStart(3, '0');
+
+  const nomor = format
+    .replace('{no}', noFormatted)
+    .replace('{kd}', kodeKategori)
+    .replace('{rayon}', kodeRayon)
+    .replace('{romawi}', bulanRomawi)
+    .replace('{tahun}', tahunSekarang);
+
+  return {
+    nomor,
+    urut,
+    tahun: tahunSekarang,
+    format
+  };
+}
+
+/**
+ * Ekstraksi variabel {{nama_variabel}} dari objek TipTap JSON atau string
+ */
+function extractVariablesFromTipTap(node, vars = new Set()) {
+  if (!node) return Array.from(vars);
+  if (typeof node === 'string') {
+    const matches = node.match(/\{\{([a-zA-Z0-9_\-]+)\}\}/g);
+    if (matches) {
+      matches.forEach(m => vars.add(m.replace(/[{}]/g, '')));
+    }
+    return Array.from(vars);
+  }
+  if (node.text) {
+    const matches = node.text.match(/\{\{([a-zA-Z0-9_\-]+)\}\}/g);
+    if (matches) {
+      matches.forEach(m => vars.add(m.replace(/[{}]/g, '')));
+    }
+  }
+  if (Array.isArray(node.content)) {
+    node.content.forEach(child => extractVariablesFromTipTap(child, vars));
+  }
+  return Array.from(vars);
+}
+
+/**
+ * Menggantikan variabel {{nama_variabel}} di seluruh node TipTap JSON secara rekursif
+ */
+function replaceVariablesInTipTapJson(node, values = {}) {
+  if (!node) return node;
+  const clone = JSON.parse(JSON.stringify(node));
+
+  function traverse(n) {
+    if (n.text) {
+      for (const [key, val] of Object.entries(values)) {
+        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+        n.text = n.text.replace(regex, val !== undefined && val !== null ? String(val) : '');
+      }
+    }
+    if (Array.isArray(n.content)) {
+      n.content.forEach(traverse);
+    }
+  }
+
+  traverse(clone);
+  return clone;
+}
+
 // Inisialisasi basis data secara otomatis saat modul dimuat
 inisialisasiDatabase();
 
@@ -254,5 +640,9 @@ module.exports = {
   getPengaturan,
   getAllPengaturan,
   setPengaturan,
-  setMultiplePengaturan
+  setMultiplePengaturan,
+  toAngkaRomawi,
+  generateNomorSurat,
+  extractVariablesFromTipTap,
+  replaceVariablesInTipTapJson
 };

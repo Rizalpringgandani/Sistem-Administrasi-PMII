@@ -36,12 +36,18 @@ app.use(session({
 const authRoutes = require('./src/routes/auth');
 const dashboardRoutes = require('./src/routes/dashboard');
 const editorRoutes = require('./src/routes/editor');
+const templateRoutes = require('./src/routes/template');
+const suratRoutes = require('./src/routes/surat');
+const arsipRoutes = require('./src/routes/arsip');
 const pengaturanRoutes = require('./src/routes/pengaturan');
 const modulMendatangRoutes = require('./src/routes/modul_mendatang');
 
 app.use(authRoutes);
 app.use(dashboardRoutes);
 app.use(editorRoutes);
+app.use(templateRoutes);
+app.use(suratRoutes);
+app.use(arsipRoutes);
 app.use(pengaturanRoutes);
 app.use(modulMendatangRoutes);
 

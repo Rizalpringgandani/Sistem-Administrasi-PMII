@@ -91,12 +91,26 @@ function renderLayout({ title, activeMenu = 'dashboard', content = '', flash = n
         </a>
 
         <div class="nav-section-title">Dokumen & Template</div>
+        <a href="/template" class="nav-link ${activeMenu === 'template' ? 'active' : ''}">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+          </svg>
+          <span>Template Surat</span>
+          <span class="nav-badge-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700;">Tahap 3</span>
+        </a>
         <a href="/surat" class="nav-link ${activeMenu === 'surat' ? 'active' : ''}">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
           </svg>
           <span>Surat Menyurat</span>
-          <span class="nav-badge-pill">Tahap 3</span>
+          <span class="nav-badge-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700;">Tahap 3</span>
+        </a>
+        <a href="/arsip" class="nav-link ${activeMenu === 'arsip' ? 'active' : ''}">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+          </svg>
+          <span>Arsip Dokumen</span>
+          <span class="nav-badge-pill" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700;">Tahap 3</span>
         </a>
         <a href="/proposal-lpj" class="nav-link ${activeMenu === 'proposal-lpj' ? 'active' : ''}">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,13 +118,6 @@ function renderLayout({ title, activeMenu = 'dashboard', content = '', flash = n
           </svg>
           <span>Proposal & LPJ</span>
           <span class="nav-badge-pill">Tahap 5</span>
-        </a>
-        <a href="/arsip" class="nav-link ${activeMenu === 'arsip' ? 'active' : ''}">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-          </svg>
-          <span>Arsip Dokumen</span>
-          <span class="nav-badge-pill">Tahap 3</span>
         </a>
 
         <div class="nav-section-title">Kaderisasi & Struktur</div>
