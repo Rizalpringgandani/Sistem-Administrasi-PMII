@@ -1,0 +1,401 @@
+/* ==========================================================================
+   CSS EDITOR DOKUMEN F4 - TIPTAP (100% LURING / OFFLINE)
+   Standar Kertas F4 (215 x 330 mm) untuk Surat, Proposal & LPJ PMII
+   ========================================================================== */
+
+/* Workspace Desk (Meja Kerja Editor) */
+.editor-workspace-desk {
+  background-color: #cbd5e1;
+  min-height: calc(100vh - var(--header-height) - 100px);
+  padding: 2rem 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Toolbar Utama Sticky */
+.editor-toolbar-container {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 40;
+  background-color: #ffffff;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+  padding: 0.5rem 1rem;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 1px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background-color: #cbd5e1;
+  margin: 0 0.25rem;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.12s ease-in-out;
+}
+
+.tb-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.tb-btn.is-active {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.tb-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tb-select {
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  border-radius: 4px;
+  padding: 0 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.tb-select:focus {
+  border-color: var(--primary);
+}
+
+.tb-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Panel Cari dan Ganti Teks */
+.find-replace-panel {
+  display: none;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 0.65rem 1rem;
+  box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);
+  animation: slideDown 0.15s ease;
+}
+
+.find-replace-panel.is-open {
+  display: block;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.find-replace-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.find-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.find-input {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.825rem;
+  outline: none;
+  min-width: 170px;
+}
+
+.find-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  padding: 0 0.35rem;
+  white-space: nowrap;
+}
+
+/* Highlight Hasil Pencarian TipTap */
+.find-and-replace-result {
+  background-color: #fef08a !important;
+  border-radius: 2px;
+  color: #0f172a;
+}
+
+.find-and-replace-result-current {
+  background-color: #f59e0b !important;
+  color: #ffffff !important;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   LEMBAR KERTAS F4 (215 x 330 mm)
+   ========================================================================== */
+
+.editor-f4-paper {
+  width: 215mm;
+  min-height: 330mm;
+  background-color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+  padding: 25mm 25mm 25mm 25mm; /* Standar margin 2.5cm keliling */
+  box-sizing: border-box;
+  color: #1e293b;
+  font-family: "Times New Roman", Times, Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  outline: none;
+  transition: box-shadow 0.2s ease;
+  position: relative;
+}
+
+/* Status Indikator Kertas */
+.paper-meta-badge {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Konten TipTap di Dalam Lembar F4 */
+.ProseMirror {
+  outline: none;
+  min-height: calc(330mm - 50mm);
+  cursor: text;
+}
+
+.ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.ProseMirror p {
+  margin: 0 0 0.75em 0;
+  text-align: inherit;
+}
+
+.ProseMirror h1 {
+  font-size: 18pt;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 1em 0 0.5em;
+}
+
+.ProseMirror h2 {
+  font-size: 15pt;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.9em 0 0.4em;
+}
+
+.ProseMirror h3 {
+  font-size: 13pt;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0.8em 0 0.3em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 2rem;
+  margin: 0.5em 0 0.75em;
+}
+
+.ProseMirror li {
+  margin-bottom: 0.25em;
+}
+
+/* Tabel di dalam TipTap */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  min-width: 1em;
+  border: 1px solid #1e293b;
+  padding: 6px 10px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  font-family: inherit;
+  font-size: 11pt;
+}
+
+.ProseMirror th {
+  font-weight: bold;
+  text-align: left;
+  background-color: #f8fafc;
+}
+
+.ProseMirror .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #3b82f6;
+  pointer-events: none;
+}
+
+/* Gambar di dalam TipTap */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  display: block;
+  margin: 1em auto;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid #3b82f6;
+}
+
+/* Status Bar di Bagian Bawah Editor */
+.editor-status-bar {
+  background-color: #ffffff;
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.status-badge-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   CSS CETAK KHUSUS KERTAS F4 (215 x 330 mm)
+   Tampilan Cetak / PDF Bersih Tanpa Elemen Antarmuka Web
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: 215mm 330mm;
+    margin: 0; /* Margin fisik diatur oleh padding F4 paper */
+  }
+
+  body, html {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000000 !important;
+  }
+
+  /* Sembunyikan semua elemen UI selain kertas dokumen */
+  .app-sidebar,
+  .app-topbar,
+  .editor-toolbar-container,
+  .find-replace-panel,
+  .editor-status-bar,
+  .paper-meta-badge,
+  .alert,
+  .btn {
+    display: none !important;
+  }
+
+  .app-wrapper,
+  .app-main,
+  .app-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  .editor-workspace-desk {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    display: block !important;
+  }
+
+  .editor-f4-paper {
+    width: 215mm !important;
+    min-height: 330mm !important;
+    margin: 0 auto !important;
+    padding: 25mm 25mm 25mm 25mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always;
+  }
+
+  .ProseMirror {
+    min-height: auto !important;
+  }
+}

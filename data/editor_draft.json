@@ -1,0 +1,19 @@
+{
+  "judul": "Dokumen Uji Otomatis",
+  "jsonContent": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Uji coba penyimpanan dokumen TipTap JSON"
+          }
+        ]
+      }
+    ]
+  },
+  "htmlContent": "<p>Uji coba penyimpanan dokumen TipTap JSON</p>",
+  "updatedAt": "2026-10-17T02:52:31.542Z"
+}

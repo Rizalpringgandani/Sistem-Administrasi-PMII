@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#003875"/>
+      <stop offset="100%" stop-color="#002147"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#FFA500"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Perisai PMII -->
+  <path d="M 100 8 
+           C 140 8, 175 25, 185 45
+           C 185 125, 155 185, 100 230
+           C 45 185, 15 125, 15 45
+           C 25 25, 60 8, 100 8 Z" 
+        fill="url(#shieldGrad)" 
+        stroke="url(#goldGrad)" 
+        stroke-width="5" 
+        filter="url(#shadow)"/>
+
+  <!-- Garis Tepi Dalam -->
+  <path d="M 100 16 
+           C 135 16, 168 30, 177 48
+           C 177 120, 150 176, 100 218
+           C 50 176, 23 120, 23 48
+           C 32 30, 65 16, 100 16 Z" 
+        fill="none" 
+        stroke="#FFD700" 
+        stroke-width="1.5" 
+        stroke-opacity="0.7"/>
+
+  <!-- Bintang 9 (1 Bintang Besar di Atas, 4 di Kiri, 4 di Kanan) -->
+  <!-- Bintang Pusat Atas (Rasulullah SAW) -->
+  <polygon points="100,26 104,38 116,38 106,46 110,58 100,50 90,58 94,46 84,38 96,38" fill="url(#goldGrad)" />
+
+  <!-- 4 Bintang Kiri (Khulafaur Rasyidin) -->
+  <polygon points="45,55 47,62 55,62 48,67 51,74 45,70 39,74 42,67 35,62 43,62" fill="url(#goldGrad)" transform="scale(0.85) translate(10, 10)" />
+  <polygon points="38,85 40,92 48,92 41,97 44,104 38,100 32,104 35,97 28,92 36,92" fill="url(#goldGrad)" transform="scale(0.85) translate(8, 20)" />
+  <polygon points="38,115 40,122 48,122 41,127 44,134 38,130 32,134 35,127 28,122 36,122" fill="url(#goldGrad)" transform="scale(0.85) translate(8, 30)" />
+  <polygon points="45,145 47,152 55,152 48,157 51,164 45,160 39,164 42,157 35,152 43,152" fill="url(#goldGrad)" transform="scale(0.85) translate(10, 40)" />
+
+  <!-- 4 Bintang Kanan (Empat Mazhab) -->
+  <polygon points="155,55 157,62 165,62 158,67 161,74 155,70 149,74 152,67 145,62 153,62" fill="url(#goldGrad)" transform="scale(0.85) translate(28, 10)" />
+  <polygon points="162,85 164,92 172,92 165,97 168,104 162,100 156,104 159,97 152,92 160,92" fill="url(#goldGrad)" transform="scale(0.85) translate(30, 20)" />
+  <polygon points="162,115 164,122 172,122 165,127 168,134 162,130 156,134 159,127 152,122 160,122" fill="url(#goldGrad)" transform="scale(0.85) translate(30, 30)" />
+  <polygon points="155,145 157,152 165,152 158,157 161,164 155,160 149,164 152,157 145,152 153,152" fill="url(#goldGrad)" transform="scale(0.85) translate(28, 40)" />
+
+  <!-- Tulisan PMII -->
+  <text x="100" y="118" 
+        font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
+        font-size="28" 
+        font-weight="900" 
+        letter-spacing="2" 
+        fill="#FFFFFF" 
+        text-anchor="middle"
+        filter="drop-shadow(0px 2px 3px rgba(0,0,0,0.5))">PMII</text>
+
+  <!-- Buku Terbuka / Pena Pengetahuan -->
+  <path d="M 60 142 
+           Q 80 135 100 145 
+           Q 120 135 140 142 
+           L 138 160 
+           Q 119 152 100 162 
+           Q 81 152 62 160 Z" 
+        fill="url(#goldGrad)" 
+        stroke="#FFFFFF" 
+        stroke-width="1.2"/>
+  <line x1="100" y1="145" x2="100" y2="162" stroke="#002147" stroke-width="2"/>
+</svg>

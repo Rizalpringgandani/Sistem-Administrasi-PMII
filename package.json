@@ -1,0 +1,40 @@
+{
+  "name": "sistem-administrasi-pmii-rayon",
+  "version": "1.0.0",
+  "description": "Aplikasi Web Lokal Sistem Administrasi PMII Rayon - Surat, Proposal, LPJ, Data Kader, dan Arsip",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build:editor": "esbuild src/client/editor-entry.js --bundle --minify --outfile=public/js/tiptap-bundle.js",
+    "test": "node tests/test_tahap1.js && node tests/test_http.js && node tests/test_tahap2.js"
+  },
+  "keywords": [
+    "pmii",
+    "administrasi",
+    "surat",
+    "kader",
+    "offline"
+  ],
+  "author": "PMII Rayon",
+  "license": "ISC",
+  "dependencies": {
+    "@tiptap/core": "^3.32.0",
+    "@tiptap/extension-find-and-replace": "^3.32.0",
+    "@tiptap/extension-image": "^3.32.0",
+    "@tiptap/extension-table": "^3.32.0",
+    "@tiptap/extension-table-cell": "^3.32.0",
+    "@tiptap/extension-table-header": "^3.32.0",
+    "@tiptap/extension-table-row": "^3.32.0",
+    "@tiptap/extension-text-align": "^3.32.0",
+    "@tiptap/extension-underline": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "multer": "^2.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
