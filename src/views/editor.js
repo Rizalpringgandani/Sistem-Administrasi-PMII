@@ -237,8 +237,8 @@ function renderEditorPage({ settings = {}, savedDraft = null }) {
     <!-- Meja Kerja Kanvas Editor -->
     <div class="editor-workspace-desk">
       <!-- Lembar Kertas Fisik F4 (215 x 330 mm) -->
-      <div class="editor-f4-paper" id="f4-paper-container">
-        <span class="paper-meta-badge">Kertas F4 &bull; 215 &times; 330 mm &bull; Margin 25mm</span>
+      <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: 20mm; --paper-margin-bottom: 20mm; --paper-line-height: 1.5; padding: 5mm 20mm 20mm 20mm;">
+        <span class="paper-meta-badge">Kertas F4 &bull; 215 &times; 330 mm</span>
         <!-- Elemen Sasaran TipTap -->
         <div id="tiptap-editor"></div>
       </div>

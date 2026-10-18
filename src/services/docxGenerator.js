@@ -76,8 +76,8 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
     }));
   }
 
-  // Margin dinamis
-  let topMargin = MARGIN_20MM_DXA;
+  // Margin dinamis: margin atas 0.5 cm (284 twips / dxa) sesuai kop surat resmi PMII
+  let topMargin = 284;
   let bottomMargin = MARGIN_20MM_DXA;
   let leftMargin = MARGIN_20MM_DXA;
   let rightMargin = MARGIN_20MM_DXA;
@@ -90,7 +90,6 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
       '30mm': 1701
     };
     if (marginMap[docData.margin]) {
-      topMargin = marginMap[docData.margin];
       bottomMargin = marginMap[docData.margin];
       leftMargin = marginMap[docData.margin];
       rightMargin = marginMap[docData.margin];
@@ -115,8 +114,8 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
             bottom: bottomMargin,
             left: leftMargin,
             right: rightMargin,
-            header: 567, // 10 mm dari tepi atas
-            footer: 567  // 10 mm dari tepi bawah
+            header: 284, // 0.5 cm (5 mm) dari tepi atas kertas
+            footer: 567  // 10 mm dari tepi bawah kertas
           }
         }
       },
@@ -181,11 +180,11 @@ function createKopSuratDocx(settings) {
       leftCellChildren.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { before: 0, after: 20 },
+          spacing: { before: 0, after: 15 },
           children: [
             new ImageRun({
               data: fs.readFileSync(pmiiLogoPath),
-              transformation: { width: 50, height: 58 }
+              transformation: { width: 68, height: 90 }
             })
           ]
         })
@@ -321,11 +320,11 @@ function createKopSuratDocx(settings) {
       rightCellChildren.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { before: 0, after: 20 },
+          spacing: { before: 0, after: 0 },
           children: [
             new ImageRun({
               data: fs.readFileSync(rayonLogoPath),
-              transformation: { width: 50, height: 58 }
+              transformation: { width: 75, height: 75 }
             })
           ]
         })
@@ -334,22 +333,6 @@ function createKopSuratDocx(settings) {
       console.warn('Gagal memuat logo rayon:', e.message);
     }
   }
-
-  rightCellChildren.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 0, line: 180 },
-      children: [
-        new TextRun({
-          text: `${namaRayonPendek}\n${settings.nama_komisariat || ''}`,
-          bold: true,
-          size: 14, // 7pt
-          color: '000000',
-          font: 'Arial'
-        })
-      ]
-    })
-  );
 
   const noBorder = {
     top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
@@ -368,17 +351,17 @@ function createKopSuratDocx(settings) {
       new TableRow({
         children: [
           new TableCell({
-            width: { size: 14, type: WidthType.PERCENTAGE },
+            width: { size: 15, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: leftCellChildren.length ? leftCellChildren : [new Paragraph({})]
           }),
           new TableCell({
-            width: { size: 72, type: WidthType.PERCENTAGE },
+            width: { size: 70, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: centerCellChildren
           }),
           new TableCell({
-            width: { size: 14, type: WidthType.PERCENTAGE },
+            width: { size: 15, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: rightCellChildren.length ? rightCellChildren : [new Paragraph({})]
           })

@@ -32,9 +32,9 @@ function renderKopSuratHtml(settings = {}) {
     <div class="kop-surat-header" style="padding-bottom: 2px; margin-bottom: 16px;">
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
         <!-- Kiri: Logo PMII & Kode Wilayah -->
-        <div style="width: 75px; text-align: center; flex-shrink: 0;">
-          <img src="${logoPmii}" alt="Logo PMII" style="width: 52px; height: auto; max-height: 70px; object-fit: contain; display: block; margin: 0 auto;">
-          <div style="font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; font-weight: bold; font-size: 11pt; color: #51A0D8; margin-top: 2px; letter-spacing: 0.5px;">
+        <div style="width: 88px; text-align: center; flex-shrink: 0;">
+          <img src="${logoPmii}" alt="Logo PMII" style="width: 70px; height: auto; max-height: 94px; object-fit: contain; display: block; margin: 0 auto;">
+          <div style="font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; font-weight: bold; font-size: 11pt; color: #51A0D8; margin-top: 3px; letter-spacing: 0.5px;">
             ${kodeWilayah}
           </div>
         </div>
@@ -64,12 +64,9 @@ function renderKopSuratHtml(settings = {}) {
           </div>
         </div>
 
-        <!-- Kanan: Logo Rayon / Komisariat & Nama Rayon Kecil -->
-        <div style="width: 75px; text-align: center; flex-shrink: 0;">
-          <img src="${logoRayon}" alt="Logo Rayon" style="width: 52px; height: auto; max-height: 70px; object-fit: contain; display: block; margin: 0 auto;">
-          <div style="font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; font-weight: bold; font-size: 7pt; color: #000000; line-height: 1.05; margin-top: 2px;">
-            ${namaRayonPendek}<br>${namaKomisariat}
-          </div>
+        <!-- Kanan: Logo Rayon / Komisariat (Hanya logo saja, tanpa teks di bawahnya) -->
+        <div style="width: 88px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+          <img src="${logoRayon}" alt="Logo Rayon" style="width: 76px; height: auto; max-height: 94px; object-fit: contain; display: block; margin: 0 auto;">
         </div>
       </div>
 

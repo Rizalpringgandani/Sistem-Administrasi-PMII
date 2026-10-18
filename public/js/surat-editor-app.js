@@ -182,13 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Atur Margin F4
+  // Atur Margin F4 (Margin atas tetap 0.5 cm = 5mm, sisi & bawah dinamis)
   const selectMargin = document.getElementById('select-margin');
   if (selectMargin && paperContainer) {
     selectMargin.onchange = (e) => {
       const val = e.target.value;
-      paperContainer.style.setProperty('--paper-margin', val);
-      paperContainer.style.padding = val;
+      paperContainer.style.setProperty('--paper-margin-side', val);
+      paperContainer.style.setProperty('--paper-margin-bottom', val);
+      paperContainer.style.padding = `5mm ${val} ${val} ${val}`;
     };
   }
 

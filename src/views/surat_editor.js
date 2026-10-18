@@ -251,7 +251,7 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
 
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
-      <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin: ${docData.margin || '20mm'}; --paper-line-height: ${docData.line_spacing || '1.5'};">
+      <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: ${docData.margin || '20mm'}; --paper-margin-bottom: ${docData.margin || '20mm'}; --paper-line-height: ${docData.line_spacing || '1.5'}; padding: 5mm ${docData.margin || '20mm'} ${docData.margin || '20mm'} ${docData.margin || '20mm'};">
         <span class="paper-meta-badge">Surat Resmi F4 &bull; 215 &times; 330 mm</span>
 
         <!-- Kop Surat PMII Otomatis Sesuai Pedoman Surat Resmi -->

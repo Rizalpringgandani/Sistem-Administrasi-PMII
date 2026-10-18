@@ -234,7 +234,7 @@
   background-color: #ffffff;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
   margin: 0 auto;
-  padding: var(--paper-margin, 20mm); /* Standar margin 2 cm sekeliling */
+  padding: var(--paper-margin-top, 5mm) var(--paper-margin-side, 20mm) var(--paper-margin-bottom, 20mm) var(--paper-margin-side, 20mm); /* Standar margin atas 0.5 cm (5mm), sisi 2 cm */
   box-sizing: border-box;
   color: #1e293b;
   font-family: "Times New Roman", Times, Georgia, serif;
@@ -473,7 +473,7 @@
     width: 215mm !important;
     min-height: 330mm !important;
     margin: 0 auto !important;
-    padding: var(--paper-margin, 20mm) !important;
+    padding: var(--paper-margin-top, 5mm) var(--paper-margin-side, 20mm) var(--paper-margin-bottom, 20mm) var(--paper-margin-side, 20mm) !important;
     line-height: var(--paper-line-height, 1.5) !important;
     box-shadow: none !important;
     border: none !important;

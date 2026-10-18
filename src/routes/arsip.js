@@ -151,7 +151,7 @@ router.get('/dokumen/:id/cetak', requireAuth, (req, res) => {
   </div>
 
   <div class="editor-workspace-desk" style="background: transparent; padding: 0;">
-    <div class="editor-f4-paper">
+    <div class="editor-f4-paper" style="--paper-margin-top: 5mm; --paper-margin-side: ${doc.margin || '20mm'}; --paper-margin-bottom: ${doc.margin || '20mm'}; --paper-line-height: ${doc.line_spacing || '1.5'}; padding: 5mm ${doc.margin || '20mm'} ${doc.margin || '20mm'} ${doc.margin || '20mm'};">
       <!-- Kop Surat PMII Otomatis Sesuai Pedoman Surat -->
       ${renderKopSuratHtml(settings)}
 

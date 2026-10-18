@@ -230,7 +230,7 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
 
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
-      <div class="editor-f4-paper" id="f4-paper-container">
+      <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: ${template && template.margin ? template.margin : '20mm'}; --paper-margin-bottom: ${template && template.margin ? template.margin : '20mm'}; --paper-line-height: ${template && template.line_spacing ? template.line_spacing : '1.5'}; padding: 5mm ${template && template.margin ? template.margin : '20mm'} ${template && template.margin ? template.margin : '20mm'} ${template && template.margin ? template.margin : '20mm'};">
         <span class="paper-meta-badge">Template Surat F4 &bull; 215 &times; 330 mm</span>
 
         <!-- Tampilan Otomatis Kop Surat PMII Sesuai Pedoman Surat -->
@@ -391,13 +391,14 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           };
         }
 
-        // Atur Margin F4
+        // Atur Margin F4 (Margin atas tetap 0.5 cm = 5mm, sisi & bawah dinamis)
         const selectMargin = document.getElementById('select-margin');
         if (selectMargin && paperContainer) {
           selectMargin.onchange = (e) => {
             const val = e.target.value;
-            paperContainer.style.setProperty('--paper-margin', val);
-            paperContainer.style.padding = val;
+            paperContainer.style.setProperty('--paper-margin-side', val);
+            paperContainer.style.setProperty('--paper-margin-bottom', val);
+            paperContainer.style.padding = '5mm ' + val + ' ' + val + ' ' + val;
           };
         }
 
