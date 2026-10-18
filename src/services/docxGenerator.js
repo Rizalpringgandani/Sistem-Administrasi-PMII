@@ -425,18 +425,19 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
       const fontSize = level === 1 ? 32 : level === 2 ? 28 : 24;
       const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
       const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
+      const nodeLineSpacing = node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing;
 
-      // Beri style bold pada heading
+      // Beri style bold pada heading dengan font Arial Narrow
       textRuns.forEach(r => {
         r.bold = true;
         r.size = fontSize;
-        r.font = 'Times New Roman';
+        r.font = 'Arial Narrow';
       });
 
       return new Paragraph({
         alignment: align,
         indent: indentOpt,
-        spacing: { before: 180, after: 100, line: lineSpacing },
+        spacing: { before: 180, after: 100, line: nodeLineSpacing },
         children: textRuns
       });
     }
@@ -446,11 +447,12 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
       const textRuns = parseTextRuns(node.content);
       const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
       const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
+      const nodeLineSpacing = node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing;
 
       return new Paragraph({
         alignment: align,
         indent: indentOpt,
-        spacing: { after: 120, line: lineSpacing },
+        spacing: { after: 120, line: nodeLineSpacing },
         children: textRuns.length ? textRuns : [new TextRun('')]
       });
     }
@@ -483,7 +485,7 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
             for (const p of listItem.content) {
               const textRuns = parseTextRuns(p.content);
               // Tambahkan nomor manual untuk kompatibilitas tinggi
-              textRuns.unshift(new TextRun({ text: `${index}. `, font: 'Times New Roman' }));
+              textRuns.unshift(new TextRun({ text: `${index}. `, font: 'Arial Narrow' }));
               items.push(new Paragraph({
                 spacing: { after: 80, line: 280 },
                 children: textRuns
@@ -645,7 +647,7 @@ function parseTextRuns(content) {
               underline: isUnderline ? {} : undefined,
               color: textColor,
               size: 24, // 12pt standar Word
-              font: 'Times New Roman'
+              font: 'Arial Narrow'
             }));
           }
           if (i < parts.length - 1) {
@@ -660,7 +662,7 @@ function parseTextRuns(content) {
           underline: isUnderline ? {} : undefined,
           color: textColor,
           size: 24, // 12pt standar Word
-          font: 'Times New Roman'
+          font: 'Arial Narrow'
         }));
       }
     }

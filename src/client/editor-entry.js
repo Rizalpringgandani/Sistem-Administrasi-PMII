@@ -152,6 +152,72 @@ export const TabKey = Extension.create({
   }
 });
 
+/**
+ * Custom Extension: LineHeight
+ * Mengatur jarak spasi baris per paragraf atau heading yang dipilih
+ */
+export const LineHeight = Extension.create({
+  name: 'lineHeight',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading'],
+        attributes: {
+          lineHeight: {
+            default: null,
+            parseHTML: element => {
+              return element.style.lineHeight || element.getAttribute('data-line-height') || null;
+            },
+            renderHTML: attributes => {
+              if (!attributes.lineHeight) return {};
+              return {
+                style: `line-height: ${attributes.lineHeight};`,
+                'data-line-height': attributes.lineHeight
+              };
+            }
+          }
+        }
+      }
+    ];
+  },
+  addCommands() {
+    return {
+      setLineHeight: (lineHeight) => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        tr = tr.setSelection(selection);
+        let updated = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (['paragraph', 'heading'].includes(node.type.name)) {
+            tr = tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              lineHeight: String(lineHeight)
+            });
+            updated = true;
+          }
+        });
+        if (dispatch && updated) dispatch(tr);
+        return updated;
+      },
+      unsetLineHeight: () => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        tr = tr.setSelection(selection);
+        let updated = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (['paragraph', 'heading'].includes(node.type.name)) {
+            tr = tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              lineHeight: null
+            });
+            updated = true;
+          }
+        });
+        if (dispatch && updated) dispatch(tr);
+        return updated;
+      }
+    };
+  }
+});
+
 window.TipTap = {
   Editor,
   StarterKit,
@@ -165,5 +231,6 @@ window.TipTap = {
   FindAndReplace,
   TextColor,
   Indent,
-  TabKey
+  TabKey,
+  LineHeight
 };

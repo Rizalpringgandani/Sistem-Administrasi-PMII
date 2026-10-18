@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     FindAndReplace,
     TextColor,
     Indent,
-    TabKey
+    TabKey,
+    LineHeight
   } = window.TipTap;
 
   // 1. Ambil data dokumen awal jika ada
@@ -133,7 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }),
       TextColor,
       Indent,
-      TabKey
+      TabKey,
+      LineHeight
     ],
     content: initialContent,
     autofocus: 'end',
@@ -277,12 +279,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOutdent.onclick = () => editor.chain().focus().outdent().run();
   }
 
-  // Jarak Spasi Baris
+  // Jarak Spasi Baris (Diterapkan ke teks/paragraf yang dipilih)
   const paperContainer = document.getElementById('f4-paper-container');
   const selectLineSpacing = document.getElementById('select-line-spacing');
   if (selectLineSpacing && paperContainer) {
     selectLineSpacing.onchange = (e) => {
       const val = e.target.value;
+      if (editor && editor.commands && editor.commands.setLineHeight) {
+        editor.chain().focus().setLineHeight(val).run();
+      }
       paperContainer.style.setProperty('--paper-line-height', val);
       const pm = paperContainer.querySelector('.ProseMirror');
       if (pm) pm.style.lineHeight = val;
@@ -297,6 +302,70 @@ document.addEventListener('DOMContentLoaded', () => {
       paperContainer.style.setProperty('--paper-margin-side', val);
       paperContainer.style.setProperty('--paper-margin-bottom', val);
       paperContainer.style.padding = `5mm ${val} ${val} ${val}`;
+      updateRuler(val);
+    };
+  }
+
+  // Fungsi Sinkronisasi Penggaris Horizontal Kayak di Word
+  function updateRuler(marginStr) {
+    const mm = parseInt(marginStr || '20', 10) || 20;
+    const rightMm = 215 - mm;
+    const leftRect = document.getElementById('ruler-margin-left');
+    const bodyRect = document.getElementById('ruler-body');
+    const rightRect = document.getElementById('ruler-margin-right');
+    const markerFirst = document.getElementById('marker-indent-first');
+    const markerLeft = document.getElementById('marker-indent-left');
+    const markerBox = document.getElementById('marker-indent-box');
+    const markerRight = document.getElementById('marker-indent-right');
+    const markerRightBox = document.getElementById('marker-indent-right-box');
+
+    if (leftRect) leftRect.setAttribute('width', mm);
+    if (bodyRect) {
+      bodyRect.setAttribute('x', mm);
+      bodyRect.setAttribute('width', 215 - (mm * 2));
+    }
+    if (rightRect) {
+      rightRect.setAttribute('x', rightMm);
+      rightRect.setAttribute('width', mm);
+    }
+    if (markerFirst) markerFirst.setAttribute('points', `${mm},0.5 ${mm - 3},5.5 ${mm + 3},5.5`);
+    if (markerLeft) markerLeft.setAttribute('points', `${mm},18 ${mm - 3},13.5 ${mm + 3},13.5`);
+    if (markerBox) markerBox.setAttribute('x', mm - 3);
+    if (markerRight) markerRight.setAttribute('points', `${rightMm},18 ${rightMm - 3},13.5 ${rightMm + 3},13.5`);
+    if (markerRightBox) markerRightBox.setAttribute('x', rightMm - 3);
+  }
+
+  // Interaktivitas Hairline & Tooltip Penggaris
+  const rulerEl = document.getElementById('word-ruler');
+  const hairlineEl = document.getElementById('ruler-hairline');
+  const tooltipEl = document.getElementById('ruler-tooltip');
+  if (rulerEl && hairlineEl && tooltipEl) {
+    rulerEl.addEventListener('mousemove', (e) => {
+      const rect = rulerEl.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, offsetX / rect.width));
+      const mm = (percent * 215).toFixed(1);
+      const cm = (mm / 10).toFixed(1);
+      hairlineEl.style.display = 'block';
+      hairlineEl.style.left = `${offsetX}px`;
+      tooltipEl.style.display = 'block';
+      tooltipEl.style.left = `${offsetX}px`;
+      tooltipEl.textContent = `${cm} cm (${mm} mm)`;
+    });
+    rulerEl.addEventListener('mouseleave', () => {
+      hairlineEl.style.display = 'none';
+      tooltipEl.style.display = 'none';
+    });
+  }
+
+  // Tombol Toggle Tampilkan/Sembunyikan Penggaris
+  const btnToggleRuler = document.getElementById('btn-toggle-ruler');
+  const rulerWrapper = document.getElementById('word-ruler-wrapper');
+  if (btnToggleRuler && rulerWrapper) {
+    btnToggleRuler.onclick = () => {
+      const isVisible = rulerWrapper.style.display !== 'none';
+      rulerWrapper.style.display = isVisible ? 'none' : 'block';
+      btnToggleRuler.classList.toggle('is-active', !isVisible);
     };
   }
 
@@ -429,11 +498,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleInput = document.getElementById('doc-title-input');
   const saveStatusText = document.getElementById('save-status-text');
 
+  // Helper Toast Notifikasi Modern
+  function showToast(title, type = 'success', subtitle = '') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    const isSuccess = type === 'success';
+    toast.innerHTML = `
+      <div class="toast-icon">
+        ${isSuccess ? 
+          '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>' :
+          '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+        }
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        ${subtitle ? `<div class="toast-subtitle">${subtitle}</div>` : ''}
+      </div>
+      <button type="button" class="toast-close" title="Tutup">✕</button>
+    `;
+    toast.querySelector('.toast-close').onclick = () => {
+      toast.classList.add('toast-hide');
+      setTimeout(() => toast.remove(), 300);
+    };
+    container.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.classList.add('toast-hide');
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 3500);
+  }
+
   async function simpanDokumen() {
+    const originalBtnHtml = btnSaveDoc.innerHTML;
     const judul = titleInput.value.trim() || 'Dokumen F4 PMII';
     const jsonContent = editor.getJSON();
     const htmlContent = editor.getHTML();
 
+    btnSaveDoc.disabled = true;
+    btnSaveDoc.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="animation: spin 1s linear infinite;">
+        <circle cx="12" cy="12" r="10" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle>
+      </svg>
+      <span>Menyimpan...</span>
+    `;
     saveStatusText.textContent = 'Menyimpan...';
 
     try {
@@ -450,14 +565,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.success) {
         const waktu = new Date().toLocaleTimeString('id-ID');
-        saveStatusText.textContent = `Tersimpan (${waktu})`;
+        saveStatusText.textContent = `✓ Tersimpan (${waktu})`;
+
+        btnSaveDoc.disabled = false;
+        btnSaveDoc.style.backgroundColor = '#10b981';
+        btnSaveDoc.style.borderColor = '#059669';
+        btnSaveDoc.style.color = '#ffffff';
+        btnSaveDoc.innerHTML = `
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>Berhasil Disimpan!</span>
+        `;
+
+        showToast('Dokumen Berhasil Disimpan!', 'success', `Judul: ${judul}`);
+
+        setTimeout(() => {
+          btnSaveDoc.innerHTML = originalBtnHtml;
+          btnSaveDoc.style.backgroundColor = '';
+          btnSaveDoc.style.borderColor = '';
+          btnSaveDoc.style.color = '';
+        }, 2500);
       } else {
+        btnSaveDoc.disabled = false;
+        btnSaveDoc.innerHTML = originalBtnHtml;
         saveStatusText.textContent = 'Gagal menyimpan';
-        alert(data.message || 'Gagal menyimpan dokumen.');
+        showToast('Gagal Menyimpan Dokumen', 'error', data.message || 'Terjadi kesalahan sistem.');
       }
     } catch (e) {
       console.error('Error simpan dokumen:', e);
+      btnSaveDoc.disabled = false;
+      btnSaveDoc.innerHTML = originalBtnHtml;
       saveStatusText.textContent = 'Gagal menyimpan (Error jaringan)';
+      showToast('Kesalahan Jaringan', 'error', 'Tidak dapat terhubung ke server lokal.');
     }
   }
 
@@ -513,6 +653,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lists
     btnBulletList.classList.toggle('is-active', editor.isActive('bulletList'));
     btnOrderedList.classList.toggle('is-active', editor.isActive('orderedList'));
+
+    // Spasi Baris Paragraf Aktif
+    if (selectLineSpacing) {
+      const { from, to } = editor.state.selection;
+      let activeLineHeight = null;
+      editor.state.doc.nodesBetween(from, to, (node) => {
+        if (['paragraph', 'heading'].includes(node.type.name) && node.attrs.lineHeight) {
+          activeLineHeight = node.attrs.lineHeight;
+        }
+      });
+      if (activeLineHeight) {
+        selectLineSpacing.value = activeLineHeight;
+      }
+    }
   }
 
   function updateDocumentStats() {

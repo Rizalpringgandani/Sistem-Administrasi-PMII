@@ -4,6 +4,7 @@
 
 const { escapeHtml } = require('./layout');
 const { renderKopSuratHtml, renderFooterHtml } = require('./kop_surat');
+const { renderWordRulerHtml } = require('./ruler');
 
 function renderSuratEditorPage({ docData = {}, settings = {} }) {
   const dokumenId = docData.id || '';
@@ -13,6 +14,7 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
   const tujuan = escapeHtml(docData.tujuan || '');
   const perihal = escapeHtml(docData.perihal || '');
   const templateId = docData.template_id || '';
+  const marginMm = parseInt(docData.margin || '20', 10) || 20;
   const initialJsonStr = docData.konten_json ? JSON.stringify(docData.konten_json) : '';
 
   return `
@@ -204,6 +206,12 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 6h16M4 18h16"></path></svg>
         </button>
 
+        <button type="button" class="tb-btn is-active" id="btn-toggle-ruler" title="Tampilkan / Sembunyikan Penggaris (Ruler Kayak di Word)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 17h18M7 7v4M11 7v3M15 7v4M19 7v3M3 7v10M21 7v10"/>
+          </svg>
+        </button>
+
         <button type="button" class="tb-btn" id="btn-toggle-find-replace" title="Cari & Ganti Teks (Ctrl+F)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </button>
@@ -249,8 +257,14 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
       </div>
     </div>
 
+    <!-- Container Toast Notifikasi Simpan -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
+      <!-- Penggaris Horizontal Kayak di Word -->
+      ${renderWordRulerHtml(marginMm)}
+
       <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: ${docData.margin || '20mm'}; --paper-margin-bottom: ${docData.margin || '20mm'}; --paper-line-height: ${docData.line_spacing || '1.5'}; padding: 5mm ${docData.margin || '20mm'} ${docData.margin || '20mm'} ${docData.margin || '20mm'};">
         <span class="paper-meta-badge">Surat Resmi F4 &bull; 215 &times; 330 mm</span>
 

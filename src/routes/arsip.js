@@ -166,7 +166,7 @@ router.get('/dokumen/:id/cetak', requireAuth, (req, res) => {
   <script src="/js/tiptap-bundle.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const { Editor, StarterKit, Underline, TextAlign, Table, TableRow, TableCell, TableHeader, Image } = window.TipTap;
+      const { Editor, StarterKit, Underline, TextAlign, Table, TableRow, TableCell, TableHeader, Image, TextColor, Indent, LineHeight } = window.TipTap;
       let content = null;
       try {
         content = JSON.parse(document.getElementById('doc-json').textContent);
@@ -184,7 +184,10 @@ router.get('/dokumen/:id/cetak', requireAuth, (req, res) => {
             TableRow,
             TableHeader,
             TableCell,
-            Image
+            Image,
+            TextColor,
+            Indent,
+            LineHeight
           ],
           content: content
         });

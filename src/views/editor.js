@@ -3,6 +3,7 @@
  */
 
 const { escapeHtml } = require('./layout');
+const { renderWordRulerHtml } = require('./ruler');
 
 function renderEditorPage({ settings = {}, savedDraft = null }) {
   const initialTitle = savedDraft && savedDraft.judul ? escapeHtml(savedDraft.judul) : 'Dokumen Baru F4';
@@ -169,10 +170,15 @@ function renderEditorPage({ settings = {}, savedDraft = null }) {
           </select>
         </div>
 
-        <!-- Cari dan Ganti Teks -->
+        <!-- Cari dan Ganti Teks & Penggaris -->
         <div class="toolbar-group">
           <button type="button" class="tb-btn" id="btn-toggle-find-replace" title="Cari & Ganti Teks (Ctrl+F)">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </button>
+          <button type="button" class="tb-btn is-active" id="btn-toggle-ruler" title="Tampilkan / Sembunyikan Penggaris (Ruler Kayak di Word)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 17h18M7 7v4M11 7v3M15 7v4M19 7v3M3 7v10M21 7v10"/>
+            </svg>
           </button>
         </div>
 
@@ -234,8 +240,14 @@ function renderEditorPage({ settings = {}, savedDraft = null }) {
       </div>
     </div>
 
+    <!-- Container Toast Notifikasi Simpan -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Meja Kerja Kanvas Editor -->
     <div class="editor-workspace-desk">
+      <!-- Penggaris Horizontal Kayak di Word -->
+      ${renderWordRulerHtml(20)}
+
       <!-- Lembar Kertas Fisik F4 (215 x 330 mm) -->
       <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: 20mm; --paper-margin-bottom: 20mm; --paper-line-height: 1.5; padding: 5mm 20mm 20mm 20mm;">
         <span class="paper-meta-badge">Kertas F4 &bull; 215 &times; 330 mm</span>

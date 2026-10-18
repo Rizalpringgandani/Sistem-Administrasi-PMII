@@ -4,12 +4,14 @@
 
 const { escapeHtml } = require('./layout');
 const { renderKopSuratHtml, renderFooterHtml } = require('./kop_surat');
+const { renderWordRulerHtml } = require('./ruler');
 
 function renderTemplateEditorPage({ template = null, settings = {} }) {
   const isEdit = Boolean(template && template.id);
   const judul = template ? escapeHtml(template.judul) : '';
   const kode = template ? escapeHtml(template.kode) : `TPL-${Date.now().toString().slice(-6)}`;
   const kategori = template ? escapeHtml(template.kategori || 'Undangan') : 'Undangan';
+  const marginMm = parseInt(template && template.margin ? template.margin : '20', 10) || 20;
   const initialJsonStr = template && template.konten_json ? template.konten_json : '';
 
   return `
@@ -225,11 +227,23 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
         <button type="button" class="tb-btn" id="btn-insert-pagebreak" title="Pisah Halaman / Lampiran (Page Break)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 6h16M4 18h16"></path></svg>
         </button>
+
+        <button type="button" class="tb-btn is-active" id="btn-toggle-ruler" title="Tampilkan / Sembunyikan Penggaris (Ruler Kayak di Word)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 17h18M7 7v4M11 7v3M15 7v4M19 7v3M3 7v10M21 7v10"/>
+          </svg>
+        </button>
       </div>
     </div>
 
+    <!-- Container Toast Notifikasi Simpan -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
+      <!-- Penggaris Horizontal Kayak di Word -->
+      ${renderWordRulerHtml(marginMm)}
+
       <div class="editor-f4-paper" id="f4-paper-container" style="--paper-margin-top: 5mm; --paper-margin-side: ${template && template.margin ? template.margin : '20mm'}; --paper-margin-bottom: ${template && template.margin ? template.margin : '20mm'}; --paper-line-height: ${template && template.line_spacing ? template.line_spacing : '1.5'}; padding: 5mm ${template && template.margin ? template.margin : '20mm'} ${template && template.margin ? template.margin : '20mm'} ${template && template.margin ? template.margin : '20mm'};">
         <span class="paper-meta-badge">Template Surat F4 &bull; 215 &times; 330 mm</span>
 
@@ -260,7 +274,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           Image,
           TextColor,
           Indent,
-          TabKey
+          TabKey,
+          LineHeight
         } = window.TipTap;
 
         let initialDoc = null;
@@ -297,7 +312,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
             Image.configure({ inline: true, allowBase64: true }),
             TextColor,
             Indent,
-            TabKey
+            TabKey,
+            LineHeight
           ],
           content: initialDoc,
           autofocus: true
@@ -379,12 +395,17 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           btnOutdent.onclick = () => editor.chain().focus().outdent().run();
         }
 
-        // Jarak Spasi Baris
+        // Jarak Spasi Baris (Diterapkan ke teks/paragraf yang dipilih)
         const paperContainer = document.getElementById('f4-paper-container');
         const selectLineSpacing = document.getElementById('select-line-spacing');
         if (selectLineSpacing && paperContainer) {
           selectLineSpacing.onchange = (e) => {
             const val = e.target.value;
+            // 1. Terapkan spasi baris ke teks/paragraf yang sedang dipilih
+            if (editor && editor.commands && editor.commands.setLineHeight) {
+              editor.chain().focus().setLineHeight(val).run();
+            }
+            // 2. Set fallback line-height pada kertas
             paperContainer.style.setProperty('--paper-line-height', val);
             const pm = paperContainer.querySelector('.ProseMirror');
             if (pm) pm.style.lineHeight = val;
@@ -399,7 +420,110 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
             paperContainer.style.setProperty('--paper-margin-side', val);
             paperContainer.style.setProperty('--paper-margin-bottom', val);
             paperContainer.style.padding = '5mm ' + val + ' ' + val + ' ' + val;
+            updateRuler(val);
           };
+        }
+
+        // Fungsi Sinkronisasi Penggaris Horizontal Kayak di Word
+        function updateRuler(marginStr) {
+          const mm = parseInt(marginStr || '20', 10) || 20;
+          const rightMm = 215 - mm;
+          const leftRect = document.getElementById('ruler-margin-left');
+          const bodyRect = document.getElementById('ruler-body');
+          const rightRect = document.getElementById('ruler-margin-right');
+          const markerFirst = document.getElementById('marker-indent-first');
+          const markerLeft = document.getElementById('marker-indent-left');
+          const markerBox = document.getElementById('marker-indent-box');
+          const markerRight = document.getElementById('marker-indent-right');
+          const markerRightBox = document.getElementById('marker-indent-right-box');
+
+          if (leftRect) leftRect.setAttribute('width', mm);
+          if (bodyRect) {
+            bodyRect.setAttribute('x', mm);
+            bodyRect.setAttribute('width', 215 - (mm * 2));
+          }
+          if (rightRect) {
+            rightRect.setAttribute('x', rightMm);
+            rightRect.setAttribute('width', mm);
+          }
+          if (markerFirst) markerFirst.setAttribute('points', mm + ',0.5 ' + (mm - 3) + ',5.5 ' + (mm + 3) + ',5.5');
+          if (markerLeft) markerLeft.setAttribute('points', mm + ',18 ' + (mm - 3) + ',13.5 ' + (mm + 3) + ',13.5');
+          if (markerBox) markerBox.setAttribute('x', mm - 3);
+          if (markerRight) markerRight.setAttribute('points', rightMm + ',18 ' + (rightMm - 3) + ',13.5 ' + (rightMm + 3) + ',13.5');
+          if (markerRightBox) markerRightBox.setAttribute('x', rightMm - 3);
+        }
+
+        // Interaktivitas Hairline & Tooltip Penggaris
+        const rulerEl = document.getElementById('word-ruler');
+        const hairlineEl = document.getElementById('ruler-hairline');
+        const tooltipEl = document.getElementById('ruler-tooltip');
+        if (rulerEl && hairlineEl && tooltipEl) {
+          rulerEl.addEventListener('mousemove', (e) => {
+            const rect = rulerEl.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const percent = Math.max(0, Math.min(1, offsetX / rect.width));
+            const mm = (percent * 215).toFixed(1);
+            const cm = (mm / 10).toFixed(1);
+            hairlineEl.style.display = 'block';
+            hairlineEl.style.left = offsetX + 'px';
+            tooltipEl.style.display = 'block';
+            tooltipEl.style.left = offsetX + 'px';
+            tooltipEl.textContent = cm + ' cm (' + mm + ' mm)';
+          });
+          rulerEl.addEventListener('mouseleave', () => {
+            hairlineEl.style.display = 'none';
+            tooltipEl.style.display = 'none';
+          });
+        }
+
+        // Tombol Toggle Tampilkan/Sembunyikan Penggaris
+        const btnToggleRuler = document.getElementById('btn-toggle-ruler');
+        const rulerWrapper = document.getElementById('word-ruler-wrapper');
+        if (btnToggleRuler && rulerWrapper) {
+          btnToggleRuler.onclick = () => {
+            const isVisible = rulerWrapper.style.display !== 'none';
+            rulerWrapper.style.display = isVisible ? 'none' : 'block';
+            btnToggleRuler.classList.toggle('is-active', !isVisible);
+          };
+        }
+
+        // Helper Toast Notifikasi
+        function showToast(title, type, subtitle) {
+          type = type || 'success';
+          subtitle = subtitle || '';
+          let container = document.getElementById('toast-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+          }
+          const toast = document.createElement('div');
+          toast.className = 'toast-notification toast-' + type;
+          const isSuccess = type === 'success';
+          toast.innerHTML = 
+            '<div class="toast-icon">' +
+              (isSuccess ? 
+                '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>' :
+                '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+              ) +
+            '</div>' +
+            '<div class="toast-content">' +
+              '<div class="toast-title">' + title + '</div>' +
+              (subtitle ? '<div class="toast-subtitle">' + subtitle + '</div>' : '') +
+            '</div>' +
+            '<button type="button" class="toast-close" title="Tutup">✕</button>';
+          toast.querySelector('.toast-close').onclick = () => {
+            toast.classList.add('toast-hide');
+            setTimeout(() => toast.remove(), 300);
+          };
+          container.appendChild(toast);
+          setTimeout(() => {
+            if (toast.parentElement) {
+              toast.classList.add('toast-hide');
+              setTimeout(() => toast.remove(), 300);
+            }
+          }, 3500);
         }
 
         // Pisah Halaman / Lampiran (Page Break)
@@ -450,13 +574,22 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
             });
             const data = await res.json();
             if (data.success) {
-              window.location.href = '/template';
+              const btnSave = document.getElementById('btn-save-template');
+              if (btnSave) {
+                btnSave.style.backgroundColor = '#10b981';
+                btnSave.style.color = '#ffffff';
+                btnSave.innerHTML = '✓ Berhasil Disimpan!';
+              }
+              showToast('Template Berhasil Disimpan!', 'success', 'Kode: ' + kode);
+              setTimeout(() => {
+                window.location.href = '/template';
+              }, 800);
             } else {
-              alert(data.message || 'Gagal menyimpan template.');
+              showToast('Gagal Menyimpan Template', 'error', data.message || 'Periksa kembali data template.');
             }
           } catch(e) {
             console.error(e);
-            alert('Terjadi kesalahan saat menyimpan template.');
+            showToast('Kesalahan Jaringan', 'error', 'Tidak dapat terhubung ke server lokal.');
           }
         };
       });
