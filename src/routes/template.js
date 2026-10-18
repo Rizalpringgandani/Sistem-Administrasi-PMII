@@ -90,7 +90,7 @@ router.get('/template/edit/:id', requireAuth, (req, res) => {
  * Simpan Template (Baru / Edit)
  */
 router.post('/template/simpan', requireAuth, (req, res) => {
-  const { id, judul, kode, kategori, jenis, jsonContent, htmlContent } = req.body;
+  const { id, judul, kode, kategori, jenis, jsonContent, htmlContent, margin, line_spacing } = req.body;
 
   if (!judul || !kode) {
     return res.status(400).json({ success: false, message: 'Judul dan Kode template wajib diisi.' });
@@ -105,18 +105,18 @@ router.post('/template/simpan', requireAuth, (req, res) => {
     if (id) {
       const stmt = db.prepare(`
         UPDATE template 
-        SET judul = ?, kode = ?, kategori = ?, konten_json = ?, konten_html = ?, variabel_daftar = ?, updated_at = CURRENT_TIMESTAMP
+        SET judul = ?, kode = ?, kategori = ?, margin = COALESCE(?, margin), line_spacing = COALESCE(?, line_spacing), konten_json = ?, konten_html = ?, variabel_daftar = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-      stmt.run(judul, kode, kategori || 'Umum', jsonContentStr, htmlContent || '', variabelDaftarStr, id);
+      stmt.run(judul, kode, kategori || 'Umum', margin || '20mm', line_spacing || '1.5', jsonContentStr, htmlContent || '', variabelDaftarStr, id);
       req.session.flash = { success: `Template "${judul}" berhasil diperbarui.` };
       return res.json({ success: true, id });
     } else {
       const stmt = db.prepare(`
-        INSERT INTO template (judul, kode, jenis, kategori, konten_json, konten_html, variabel_daftar, is_bawaan)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+        INSERT INTO template (judul, kode, jenis, kategori, margin, line_spacing, konten_json, konten_html, variabel_daftar, is_bawaan)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
       `);
-      const result = stmt.run(judul, kode, jenis || 'surat_keluar', kategori || 'Umum', jsonContentStr, htmlContent || '', variabelDaftarStr);
+      const result = stmt.run(judul, kode, jenis || 'surat_keluar', kategori || 'Umum', margin || '20mm', line_spacing || '1.5', jsonContentStr, htmlContent || '', variabelDaftarStr);
       req.session.flash = { success: `Template "${judul}" berhasil dibuat dengan ${variables.length} variabel.` };
       return res.json({ success: true, id: result.lastInsertRowid });
     }

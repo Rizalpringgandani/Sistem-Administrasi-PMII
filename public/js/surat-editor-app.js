@@ -18,7 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     TableCell,
     TableHeader,
     Image,
-    FindAndReplace
+    FindAndReplace,
+    TextColor,
+    Indent,
+    TabKey
   } = window.TipTap;
 
   // Baca JSON dokumen inisial
@@ -55,7 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
       TableHeader,
       TableCell,
       Image.configure({ inline: true, allowBase64: true }),
-      FindAndReplace.configure({ searchDebounceMs: 150 })
+      FindAndReplace.configure({ searchDebounceMs: 150 }),
+      TextColor,
+      Indent,
+      TabKey
     ],
     content: initialContent,
     autofocus: true,
@@ -135,6 +141,56 @@ document.addEventListener('DOMContentLoaded', () => {
       imageFileInput.value = '';
     }
   };
+
+  // Warna Teks #51A0D8 & Color Picker
+  const btnColorPmii = document.getElementById('btn-color-pmii');
+  if (btnColorPmii) {
+    btnColorPmii.onclick = () => editor.chain().focus().setColor('#51A0D8').run();
+  }
+  const textColorPicker = document.getElementById('text-color-picker');
+  if (textColorPicker) {
+    textColorPicker.oninput = (e) => editor.chain().focus().setColor(e.target.value).run();
+  }
+  const btnColorReset = document.getElementById('btn-color-reset');
+  if (btnColorReset) {
+    btnColorReset.onclick = () => editor.chain().focus().unsetColor().run();
+  }
+
+  // Tab & Indentasi
+  const btnInsertTab = document.getElementById('btn-insert-tab');
+  if (btnInsertTab) {
+    btnInsertTab.onclick = () => editor.chain().focus().insertContent('\t').run();
+  }
+  const btnIndent = document.getElementById('btn-indent');
+  if (btnIndent) {
+    btnIndent.onclick = () => editor.chain().focus().indent().run();
+  }
+  const btnOutdent = document.getElementById('btn-outdent');
+  if (btnOutdent) {
+    btnOutdent.onclick = () => editor.chain().focus().outdent().run();
+  }
+
+  // Jarak Spasi Baris
+  const paperContainer = document.getElementById('f4-paper-container');
+  const selectLineSpacing = document.getElementById('select-line-spacing');
+  if (selectLineSpacing && paperContainer) {
+    selectLineSpacing.onchange = (e) => {
+      const val = e.target.value;
+      paperContainer.style.setProperty('--paper-line-height', val);
+      const pm = paperContainer.querySelector('.ProseMirror');
+      if (pm) pm.style.lineHeight = val;
+    };
+  }
+
+  // Atur Margin F4
+  const selectMargin = document.getElementById('select-margin');
+  if (selectMargin && paperContainer) {
+    selectMargin.onchange = (e) => {
+      const val = e.target.value;
+      paperContainer.style.setProperty('--paper-margin', val);
+      paperContainer.style.padding = val;
+    };
+  }
 
   // Pisah Halaman / Lampiran (Page Break)
   const btnPageBreak = document.getElementById('btn-insert-pagebreak');
@@ -254,6 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
       nama_panitia: panitiaInput ? (panitiaInput.value || '') : '',
       bulan_surat: bulanInput ? (bulanInput.value || '') : '',
       tahun_surat: tahunInput ? (tahunInput.value || '') : '',
+      margin: selectMargin ? selectMargin.value : '20mm',
+      line_spacing: selectLineSpacing ? selectLineSpacing.value : '1.5',
       konten_json: editor.getJSON(),
       konten_html: editor.getHTML()
     };
@@ -293,7 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
       currentId = await simpanKeArsip();
     }
     if (currentId) {
-      window.location.href = `/dokumen/${currentId}/export-word`;
+      const mVal = selectMargin ? selectMargin.value : '20mm';
+      const lsVal = selectLineSpacing ? selectLineSpacing.value : '1.5';
+      window.location.href = `/dokumen/${currentId}/export-word?margin=${encodeURIComponent(mVal)}&line_spacing=${encodeURIComponent(lsVal)}`;
     }
   };
 

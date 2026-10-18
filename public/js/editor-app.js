@@ -19,7 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     TableCell,
     TableHeader,
     Image,
-    FindAndReplace
+    FindAndReplace,
+    TextColor,
+    Indent,
+    TabKey
   } = window.TipTap;
 
   // 1. Ambil data dokumen awal jika ada
@@ -127,7 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }),
       FindAndReplace.configure({
         searchDebounceMs: 150
-      })
+      }),
+      TextColor,
+      Indent,
+      TabKey
     ],
     content: initialContent,
     autofocus: 'end',
@@ -242,6 +248,56 @@ document.addEventListener('DOMContentLoaded', () => {
       imageFileInput.value = '';
     }
   });
+
+  // Warna Teks #51A0D8 & Color Picker
+  const btnColorPmii = document.getElementById('btn-color-pmii');
+  if (btnColorPmii) {
+    btnColorPmii.onclick = () => editor.chain().focus().setColor('#51A0D8').run();
+  }
+  const textColorPicker = document.getElementById('text-color-picker');
+  if (textColorPicker) {
+    textColorPicker.oninput = (e) => editor.chain().focus().setColor(e.target.value).run();
+  }
+  const btnColorReset = document.getElementById('btn-color-reset');
+  if (btnColorReset) {
+    btnColorReset.onclick = () => editor.chain().focus().unsetColor().run();
+  }
+
+  // Tab & Indentasi
+  const btnInsertTab = document.getElementById('btn-insert-tab');
+  if (btnInsertTab) {
+    btnInsertTab.onclick = () => editor.chain().focus().insertContent('\t').run();
+  }
+  const btnIndent = document.getElementById('btn-indent');
+  if (btnIndent) {
+    btnIndent.onclick = () => editor.chain().focus().indent().run();
+  }
+  const btnOutdent = document.getElementById('btn-outdent');
+  if (btnOutdent) {
+    btnOutdent.onclick = () => editor.chain().focus().outdent().run();
+  }
+
+  // Jarak Spasi Baris
+  const paperContainer = document.getElementById('f4-paper-container');
+  const selectLineSpacing = document.getElementById('select-line-spacing');
+  if (selectLineSpacing && paperContainer) {
+    selectLineSpacing.onchange = (e) => {
+      const val = e.target.value;
+      paperContainer.style.setProperty('--paper-line-height', val);
+      const pm = paperContainer.querySelector('.ProseMirror');
+      if (pm) pm.style.lineHeight = val;
+    };
+  }
+
+  // Atur Margin F4
+  const selectMargin = document.getElementById('select-margin');
+  if (selectMargin && paperContainer) {
+    selectMargin.onchange = (e) => {
+      const val = e.target.value;
+      paperContainer.style.setProperty('--paper-margin', val);
+      paperContainer.style.padding = val;
+    };
+  }
 
   // 6. Fitur Cari dan Ganti Teks (Find & Replace)
   const panelFindReplace = document.getElementById('find-replace-panel');

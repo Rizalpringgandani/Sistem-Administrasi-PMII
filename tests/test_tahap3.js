@@ -62,19 +62,42 @@ const substituted = replaceVariablesInTipTapJson(testTipTap, { tujuan: 'Sahabat 
 assert.strictEqual(substituted.content[0].content[0].text, 'Surat untuk Sahabat Budi tentang Rapat Kerja.');
 console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
 
-// 4. Verifikasi Pembuatan File Word .docx
+// 4. Verifikasi Pembuatan File Word .docx dengan Fitur Baru (Warna #51A0D8, Tabs, Indentasi, Margin, Spasi)
 (async () => {
+  const docxWithFeaturesJson = {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        attrs: { textAlign: 'left', indent: 1 },
+        content: [
+          { type: 'text', text: 'Nomor\t: ' },
+          { type: 'text', marks: [{ type: 'textColor', attrs: { color: '#51A0D8' } }, { type: 'bold' }], text: '001.PR-IV.V-02.01.001.A-I.10.2026' }
+        ]
+      },
+      {
+        type: 'paragraph',
+        attrs: { textAlign: 'justify', indent: 0 },
+        content: [
+          { type: 'text', text: 'Ini adalah paragraf pengujian dengan tabulasi:\tbagian teks setelah tab stop.' }
+        ]
+      }
+    ]
+  };
+
   const docxBuf = await generateDocxFromTipTap({
     docData: {
       judul: 'Surat Uji docx',
-      konten_json: substituted
+      konten_json: docxWithFeaturesJson,
+      margin: '25mm',
+      line_spacing: '1.5'
     },
     settings: getAllPengaturan(),
     includeKop: true
   });
   assert.ok(Buffer.isBuffer(docxBuf), 'Output docx harus berupa buffer');
   assert.ok(docxBuf.length > 5000, `Ukuran buffer docx harus memadai (${docxBuf.length} bytes)`);
-  console.log(`✓ Pembuatan berkas Word (.docx) F4 terverifikasi: ${(docxBuf.length / 1024).toFixed(1)} KB.`);
+  console.log(`✓ Pembuatan berkas Word (.docx) F4 dengan warna teks #51A0D8, tab, indentasi, dan margin terverifikasi: ${(docxBuf.length / 1024).toFixed(1)} KB.`);
 
   // 5. Setup Server Uji Integrasi HTTP
   const authRoutes = require('../src/routes/auth');
@@ -119,7 +142,18 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.ok(textTpl.includes('Kelola Template Dokumen'));
       console.log('✓ Endpoint GET /template terverifikasi.');
 
-      // B. Test Simpan Template Baru
+      // B. Test Halaman Template Baru (Harus Kosong & Dilengkapi Toolbar Baru)
+      const resTplBaru = await fetch(`http://localhost:${port}/template/baru`, { headers: { 'Cookie': cookieHeader } });
+      assert.strictEqual(resTplBaru.status, 200);
+      const textTplBaru = await resTplBaru.text();
+      assert.ok(textTplBaru.includes('btn-color-pmii'), 'Toolbar template baru harus memuat tombol warna PMII');
+      assert.ok(textTplBaru.includes('select-margin'), 'Toolbar template baru harus memuat atur margin');
+      assert.ok(textTplBaru.includes('select-line-spacing'), 'Toolbar template baru harus memuat atur jarak spasi');
+      assert.ok(textTplBaru.includes('btn-insert-tab'), 'Toolbar template baru harus memuat tombol tab');
+      assert.ok(!textTplBaru.includes('Tuliskan isi surat template di sini dengan menandai'), 'Template baru tidak boleh lagi dipenuhi teks tiruan');
+      console.log('✓ Halaman template baru kosong & toolbar lengkap terverifikasi.');
+
+      // Test Simpan Template Baru
       const resSaveTpl = await fetch(`http://localhost:${port}/template/simpan`, {
         method: 'POST',
         headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
@@ -128,6 +162,8 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
           kode: 'TPL-TEST-MANDAT',
           kategori: 'Mandat',
           jenis: 'surat_keluar',
+          margin: '25mm',
+          line_spacing: '1.5',
           jsonContent: {
             type: 'doc',
             content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Memberikan mandat kepada {{nama_penerima}}.' }] }]
@@ -172,9 +208,10 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       const htmlProses = await resProses.text();
       assert.ok(htmlProses.includes('Sahabat Zaid'), 'Dokumen di editor harus memuat nilai variabel terisi');
       assert.ok(htmlProses.includes('doc-no-urut-total'), 'Editor harus memuat input hidden counter');
+      assert.ok(htmlProses.includes('btn-color-pmii'), 'Editor surat harus memuat tombol warna PMII');
       console.log('✓ Proses substitusi template ke editor F4 terverifikasi.');
 
-      // E. Test Simpan ke Arsip Dokumen dengan Kolom PPTA Terpisah
+      // E. Test Simpan ke Arsip Dokumen dengan Kolom PPTA Terpisah, Margin & Line Spacing
       const resSimpanArsip = await fetch(`http://localhost:${port}/api/surat/simpan-arsip`, {
         method: 'POST',
         headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
@@ -193,6 +230,8 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
           nama_panitia: '',
           bulan_surat: '10',
           tahun_surat: 2026,
+          margin: '25mm',
+          line_spacing: '2.0',
           konten_json: {
             type: 'doc',
             content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Memberikan mandat kepada Sahabat Zaid.' }] }]
@@ -211,7 +250,9 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.strictEqual(savedDoc.no_urut_total, 5);
       assert.strictEqual(savedDoc.no_urut_jenis, 5);
       assert.strictEqual(savedDoc.kode_penandatangan, 'A-I');
-      console.log('✓ Simpan surat ke tabel dokumen arsip dengan kolom PPTA mandiri terverifikasi (Dokumen ID:', docId, ').');
+      assert.strictEqual(savedDoc.margin, '25mm');
+      assert.strictEqual(savedDoc.line_spacing, '2.0');
+      console.log('✓ Simpan surat ke tabel dokumen arsip dengan margin & line spacing terverifikasi (Dokumen ID:', docId, ').');
 
       // F. Test Menu Arsip
       const resArsip = await fetch(`http://localhost:${port}/arsip`, { headers: { 'Cookie': cookieHeader } });
@@ -221,13 +262,13 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.ok(textArsip.includes('Internal'), 'Halaman arsip harus memuat badge sifat surat Internal');
       console.log('✓ Halaman arsip menampilkan surat dengan badge PPTA terverifikasi.');
 
-      // G. Test Export Word (.docx)
-      const resExportWord = await fetch(`http://localhost:${port}/dokumen/${docId}/export-word`, { headers: { 'Cookie': cookieHeader } });
+      // G. Test Export Word (.docx) dengan Margin & Spasi Dinamis
+      const resExportWord = await fetch(`http://localhost:${port}/dokumen/${docId}/export-word?margin=25mm&line_spacing=2.0`, { headers: { 'Cookie': cookieHeader } });
       assert.strictEqual(resExportWord.status, 200);
       assert.strictEqual(resExportWord.headers.get('content-type'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       const docxArrayBuf = await resExportWord.arrayBuffer();
       assert.ok(docxArrayBuf.byteLength > 10000, 'Ukuran file docx terunduh harus valid');
-      console.log('✓ Unduh berkas Word (.docx) F4 terverifikasi:', (docxArrayBuf.byteLength / 1024).toFixed(1), 'KB.');
+      console.log('✓ Unduh berkas Word (.docx) F4 dinamis terverifikasi:', (docxArrayBuf.byteLength / 1024).toFixed(1), 'KB.');
 
       // H. Test Cetak / PDF View
       const resCetak = await fetch(`http://localhost:${port}/dokumen/${docId}/cetak`, { headers: { 'Cookie': cookieHeader } });

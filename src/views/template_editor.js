@@ -176,6 +176,52 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
         </button>
 
+        <!-- Warna Teks & Biru PMII -->
+        <div class="toolbar-group" title="Warna Teks">
+          <button type="button" class="tb-btn tb-btn-color-pmii" id="btn-color-pmii" title="Warna Biru PMII (#51A0D8)">
+            A
+          </button>
+          <input type="color" id="text-color-picker" value="#51A0D8" class="tb-color-picker" title="Pilih Warna Teks Bebas">
+          <button type="button" class="tb-btn" id="btn-color-reset" title="Warna Teks Hitam / Default" style="font-size: 0.75rem; font-weight: 700;">
+            ✕
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Tab & Indentasi -->
+        <div class="toolbar-group" title="Tabulasi & Indentasi Teks">
+          <button type="button" class="tb-btn" id="btn-insert-tab" title="Sisipkan Tab (⇥ Tab)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7M5 12h11M19 5v14"></path></svg>
+          </button>
+          <button type="button" class="tb-btn" id="btn-indent" title="Tambah Indentasi (Geser Kanan)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M4 6h7M4 12h5M4 18h7"></path></svg>
+          </button>
+          <button type="button" class="tb-btn" id="btn-outdent" title="Kurangi Indentasi (Geser Kiri)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M20 6H9M20 12h-5M20 18H9"></path></svg>
+          </button>
+        </div>
+
+        <!-- Spasi Baris -->
+        <div class="toolbar-group" title="Jarak Spasi Baris">
+          <select id="select-line-spacing" class="tb-select">
+            <option value="1.0">Spasi 1.0</option>
+            <option value="1.15">Spasi 1.15</option>
+            <option value="1.5" selected>Spasi 1.5</option>
+            <option value="2.0">Spasi 2.0</option>
+          </select>
+        </div>
+
+        <!-- Atur Margin F4 -->
+        <div class="toolbar-group" title="Atur Margin Kertas F4">
+          <select id="select-margin" class="tb-select">
+            <option value="20mm" selected>Margin 2 cm (PMII)</option>
+            <option value="25mm">Margin 2.5 cm</option>
+            <option value="15mm">Margin 1.5 cm</option>
+            <option value="30mm">Margin 3 cm</option>
+          </select>
+        </div>
+
         <button type="button" class="tb-btn" id="btn-insert-pagebreak" title="Pisah Halaman / Lampiran (Page Break)">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 6h16M4 18h16"></path></svg>
         </button>
@@ -202,7 +248,20 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
     <script src="/js/tiptap-bundle.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        const { Editor, StarterKit, Underline, TextAlign, Table, TableRow, TableCell, TableHeader, Image } = window.TipTap;
+        const {
+          Editor,
+          StarterKit,
+          Underline,
+          TextAlign,
+          Table,
+          TableRow,
+          TableCell,
+          TableHeader,
+          Image,
+          TextColor,
+          Indent,
+          TabKey
+        } = window.TipTap;
 
         let initialDoc = null;
         const initEl = document.getElementById('initial-template-json');
@@ -212,84 +271,14 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           } catch(e) {}
         }
 
+        // Untuk template baru: dibuat kosong agar sekretaris bebas merancang penuh dari awal
         if (!initialDoc) {
           initialDoc = {
             type: 'doc',
             content: [
               {
                 type: 'paragraph',
-                attrs: { textAlign: 'left' },
-                content: [
-                  { type: 'text', text: 'Nomor\\t: ' },
-                  { type: 'text', marks: [{ type: 'bold' }], text: '{{nomor_surat}}' },
-                  { type: 'text', text: '\\nLampiran\\t: {{lampiran}}\\nPerihal\\t: ' },
-                  { type: 'text', marks: [{ type: 'bold' }], text: '{{perihal}}' }
-                ]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'right' },
-                content: [{ type: 'text', text: '{{tempat_surat}}, {{tanggal_surat}}' }]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'left' },
-                content: [
-                  { type: 'text', text: 'Kepada Yth.\\n' },
-                  { type: 'text', marks: [{ type: 'bold' }], text: '{{tujuan}}\\n' },
-                  { type: 'text', text: 'di -\\n\\t{{tempat_tujuan}}' }
-                ]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'left' },
-                content: [{ type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: "Assalamu'alaikum Warahmatullahi Wabarakatuh" }]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'justify' },
-                content: [{ type: 'text', text: "Salam silaturrahim teriring do'a kami sampaikan semoga Sahabat/i senantiasa dalam lindungan Allah SWT serta eksis dalam menjalankan aktivitas keseharian. Aamiin." }]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'justify' },
-                content: [{ type: 'text', text: 'Tuliskan isi surat template di sini dengan menandai bagian yang akan diisi pengguna menggunakan kurung kurawal ganda, misalnya: {{nama_kegiatan}}, {{hari_tanggal}}, {{tempat}}.' }]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'justify' },
-                content: [{ type: 'text', text: 'Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami haturkan terima kasih.' }]
-              },
-              {
-                type: 'paragraph',
-                attrs: { textAlign: 'left' },
-                content: [{ type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: 'Wallahul Muwaffiq Ila Aqwamith Tharieq\\nWassalamu’alaikum Warahmatullahi Wabarakatuh' }]
-              },
-              {
-                type: 'table',
-                content: [
-                  {
-                    type: 'tableRow',
-                    content: [
-                      {
-                        type: 'tableCell',
-                        content: [
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Ketua Rayon' }] },
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\\n\\n\\n' }] },
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_ketua}}' }] }
-                        ]
-                      },
-                      {
-                        type: 'tableCell',
-                        content: [
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Sekretaris Rayon' }] },
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: '\\n\\n\\n' }] },
-                          { type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_sekretaris}}' }] }
-                        ]
-                      }
-                    ]
-                  }
-                ]
+                attrs: { textAlign: 'left' }
               }
             ]
           };
@@ -305,13 +294,16 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
             TableRow,
             TableHeader,
             TableCell,
-            Image.configure({ inline: true, allowBase64: true })
+            Image.configure({ inline: true, allowBase64: true }),
+            TextColor,
+            Indent,
+            TabKey
           ],
           content: initialDoc,
           autofocus: true
         });
 
-        // Binding tombol toolbar
+        // Binding tombol toolbar format dasar
         document.getElementById('btn-undo').onclick = () => editor.chain().focus().undo().run();
         document.getElementById('btn-redo').onclick = () => editor.chain().focus().redo().run();
         document.getElementById('btn-bold').onclick = () => editor.chain().focus().toggleBold().run();
@@ -334,12 +326,80 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
         document.getElementById('btn-bullet-list').onclick = () => editor.chain().focus().toggleBulletList().run();
         document.getElementById('btn-ordered-list').onclick = () => editor.chain().focus().toggleOrderedList().run();
 
+        // Tabel
         document.getElementById('btn-insert-table').onclick = () => editor.chain().focus().insertTable({ rows: 3, cols: 2, withHeaderRow: true }).run();
         document.getElementById('btn-add-row').onclick = () => editor.chain().focus().addRowAfter().run();
         document.getElementById('btn-delete-row').onclick = () => editor.chain().focus().deleteRow().run();
         document.getElementById('btn-add-col').onclick = () => editor.chain().focus().addColumnAfter().run();
         document.getElementById('btn-delete-col').onclick = () => editor.chain().focus().deleteColumn().run();
         document.getElementById('btn-delete-table').onclick = () => editor.chain().focus().deleteTable().run();
+
+        // Sisipkan Gambar
+        const btnImage = document.getElementById('btn-insert-image');
+        const inputImage = document.getElementById('editor-image-file-input');
+        if (btnImage && inputImage) {
+          btnImage.onclick = () => inputImage.click();
+          inputImage.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+              editor.chain().focus().setImage({ src: re.target.result }).run();
+              inputImage.value = '';
+            };
+            reader.readAsDataURL(file);
+          };
+        }
+
+        // Warna Teks #51A0D8 & Color Picker
+        const btnColorPmii = document.getElementById('btn-color-pmii');
+        if (btnColorPmii) {
+          btnColorPmii.onclick = () => editor.chain().focus().setColor('#51A0D8').run();
+        }
+        const textColorPicker = document.getElementById('text-color-picker');
+        if (textColorPicker) {
+          textColorPicker.oninput = (e) => editor.chain().focus().setColor(e.target.value).run();
+        }
+        const btnColorReset = document.getElementById('btn-color-reset');
+        if (btnColorReset) {
+          btnColorReset.onclick = () => editor.chain().focus().unsetColor().run();
+        }
+
+        // Tab & Indentasi
+        const btnInsertTab = document.getElementById('btn-insert-tab');
+        if (btnInsertTab) {
+          btnInsertTab.onclick = () => editor.chain().focus().insertContent('\t').run();
+        }
+        const btnIndent = document.getElementById('btn-indent');
+        if (btnIndent) {
+          btnIndent.onclick = () => editor.chain().focus().indent().run();
+        }
+        const btnOutdent = document.getElementById('btn-outdent');
+        if (btnOutdent) {
+          btnOutdent.onclick = () => editor.chain().focus().outdent().run();
+        }
+
+        // Jarak Spasi Baris
+        const paperContainer = document.getElementById('f4-paper-container');
+        const selectLineSpacing = document.getElementById('select-line-spacing');
+        if (selectLineSpacing && paperContainer) {
+          selectLineSpacing.onchange = (e) => {
+            const val = e.target.value;
+            paperContainer.style.setProperty('--paper-line-height', val);
+            const pm = paperContainer.querySelector('.ProseMirror');
+            if (pm) pm.style.lineHeight = val;
+          };
+        }
+
+        // Atur Margin F4
+        const selectMargin = document.getElementById('select-margin');
+        if (selectMargin && paperContainer) {
+          selectMargin.onchange = (e) => {
+            const val = e.target.value;
+            paperContainer.style.setProperty('--paper-margin', val);
+            paperContainer.style.padding = val;
+          };
+        }
 
         // Pisah Halaman / Lampiran (Page Break)
         const btnPageBreak = document.getElementById('btn-insert-pagebreak');
@@ -360,6 +420,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           const judul = document.getElementById('tpl-judul').value.trim();
           const kode = document.getElementById('tpl-kode').value.trim();
           const kategori = document.getElementById('tpl-kategori').value;
+          const margin = selectMargin ? selectMargin.value : '20mm';
+          const line_spacing = selectLineSpacing ? selectLineSpacing.value : '1.5';
 
           if (!judul || !kode) {
             alert('Judul dan Kode Template wajib diisi.');
@@ -379,6 +441,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
                 kode,
                 kategori,
                 jenis: 'surat_keluar',
+                margin,
+                line_spacing,
                 jsonContent,
                 htmlContent
               })

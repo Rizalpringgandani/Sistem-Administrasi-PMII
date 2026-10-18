@@ -135,6 +135,12 @@ function inisialisasiDatabase() {
   if (!templateCols.includes('konten_json')) {
     db.exec('ALTER TABLE template ADD COLUMN konten_json TEXT;');
   }
+  if (!templateCols.includes('margin')) {
+    db.exec("ALTER TABLE template ADD COLUMN margin TEXT DEFAULT '20mm';");
+  }
+  if (!templateCols.includes('line_spacing')) {
+    db.exec("ALTER TABLE template ADD COLUMN line_spacing TEXT DEFAULT '1.5';");
+  }
 
   const dokumenCols = db.prepare('PRAGMA table_info(dokumen)').all().map(c => c.name);
   if (!dokumenCols.includes('konten_json')) {
@@ -160,6 +166,12 @@ function inisialisasiDatabase() {
   }
   if (!dokumenCols.includes('tahun_surat')) {
     db.exec('ALTER TABLE dokumen ADD COLUMN tahun_surat INTEGER;');
+  }
+  if (!dokumenCols.includes('margin')) {
+    db.exec("ALTER TABLE dokumen ADD COLUMN margin TEXT DEFAULT '20mm';");
+  }
+  if (!dokumenCols.includes('line_spacing')) {
+    db.exec("ALTER TABLE dokumen ADD COLUMN line_spacing TEXT DEFAULT '1.5';");
   }
 
   seedingDataAwal();

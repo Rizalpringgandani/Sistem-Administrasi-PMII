@@ -252,7 +252,9 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
     bulan_surat,
     tahun_surat,
     konten_json,
-    konten_html
+    konten_html,
+    margin,
+    line_spacing
   } = req.body;
 
   if (!judul || !nomor_dokumen) {
@@ -308,6 +310,8 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
             nama_panitia = COALESCE(?, nama_panitia),
             bulan_surat = COALESCE(?, bulan_surat),
             tahun_surat = COALESCE(?, tahun_surat),
+            margin = COALESCE(?, margin),
+            line_spacing = COALESCE(?, line_spacing),
             konten_json = ?, konten_html = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
@@ -324,6 +328,8 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
         nama_panitia !== undefined ? nama_panitia : null,
         parsedBulan,
         parsedTahun,
+        margin || '20mm',
+        line_spacing || '1.5',
         jsonStr,
         htmlStr,
         id
@@ -336,8 +342,9 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
           judul, nomor_dokumen, jenis, template_id, tujuan, perihal,
           tanggal_dokumen, no_urut_total, no_urut_jenis, sifat_surat,
           kode_penandatangan, nama_panitia, bulan_surat, tahun_surat,
+          margin, line_spacing,
           konten_json, konten_html, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'diarsipkan')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'diarsipkan')
       `);
       const result = stmt.run(
         judul,
@@ -354,6 +361,8 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
         nama_panitia || '',
         parsedBulan,
         parsedTahun,
+        margin || '20mm',
+        line_spacing || '1.5',
         jsonStr,
         htmlStr
       );

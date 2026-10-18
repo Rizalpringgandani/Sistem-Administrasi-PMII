@@ -97,6 +97,51 @@
   border-color: var(--primary);
 }
 
+.tb-color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.tb-color-picker::-webkit-color-swatch {
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.tb-color-picker::-moz-color-swatch {
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.tb-btn-color-pmii {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #51A0D8 !important;
+  line-height: 1;
+}
+
+.tb-btn-color-pmii::after {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 3px;
+  background-color: #51A0D8;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
 .tb-action-btn {
   display: inline-flex;
   align-items: center;
@@ -189,12 +234,12 @@
   background-color: #ffffff;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
   margin: 0 auto;
-  padding: 20mm 20mm 20mm 20mm; /* Standar margin 2 cm sekeliling */
+  padding: var(--paper-margin, 20mm); /* Standar margin 2 cm sekeliling */
   box-sizing: border-box;
   color: #1e293b;
   font-family: "Times New Roman", Times, Georgia, serif;
   font-size: 12pt;
-  line-height: 1.5;
+  line-height: var(--paper-line-height, 1.5);
   outline: none;
   transition: box-shadow 0.2s ease;
   position: relative;
@@ -218,6 +263,10 @@
   outline: none;
   min-height: calc(330mm - 40mm);
   cursor: text;
+  white-space: pre-wrap;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  line-height: var(--paper-line-height, 1.5);
 }
 
 .ProseMirror > * + * {
@@ -424,7 +473,8 @@
     width: 215mm !important;
     min-height: 330mm !important;
     margin: 0 auto !important;
-    padding: 20mm 20mm 20mm 20mm !important; /* Margin 2 cm */
+    padding: var(--paper-margin, 20mm) !important;
+    line-height: var(--paper-line-height, 1.5) !important;
     box-shadow: none !important;
     border: none !important;
   }

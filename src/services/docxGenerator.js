@@ -8,6 +8,7 @@ const {
   Packer,
   Paragraph,
   TextRun,
+  Tab,
   Table,
   TableRow,
   TableCell,
@@ -44,9 +45,22 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
     }
   }
 
+  let lineSpacingVal = 360; // Default 1.5 baris standar PMII
+  if (docData && docData.line_spacing) {
+    const spacingMap = {
+      '1.0': 240,
+      '1.15': 276,
+      '1.5': 360,
+      '2.0': 480
+    };
+    if (spacingMap[docData.line_spacing]) {
+      lineSpacingVal = spacingMap[docData.line_spacing];
+    }
+  }
+
   if (tiptapJson && Array.isArray(tiptapJson.content)) {
     for (const node of tiptapJson.content) {
-      const docxNode = convertTipTapNodeToDocx(node);
+      const docxNode = convertTipTapNodeToDocx(node, lineSpacingVal);
       if (docxNode) {
         if (Array.isArray(docxNode)) {
           children.push(...docxNode);
@@ -62,11 +76,32 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
     }));
   }
 
+  // Margin dinamis
+  let topMargin = MARGIN_20MM_DXA;
+  let bottomMargin = MARGIN_20MM_DXA;
+  let leftMargin = MARGIN_20MM_DXA;
+  let rightMargin = MARGIN_20MM_DXA;
+
+  if (docData && docData.margin) {
+    const marginMap = {
+      '15mm': 850,
+      '20mm': 1134,
+      '25mm': 1417,
+      '30mm': 1701
+    };
+    if (marginMap[docData.margin]) {
+      topMargin = marginMap[docData.margin];
+      bottomMargin = marginMap[docData.margin];
+      leftMargin = marginMap[docData.margin];
+      rightMargin = marginMap[docData.margin];
+    }
+  }
+
   // Kop Surat & Footer Berulang di Setiap Halaman
   const headerChildren = includeKop ? createKopSuratDocx(settings) : [];
   const mottoText = settings.motto_kop || 'Dzikir, Fikir, Amal Sholeh';
 
-  // Susun Dokumen Word dengan Ukuran Kertas F4 (21 x 33 cm) & Margin 2 cm
+  // Susun Dokumen Word dengan Ukuran Kertas F4 (21 x 33 cm) & Margin yang Dipilih
   const doc = new Document({
     sections: [{
       properties: {
@@ -76,10 +111,10 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
             height: F4_HEIGHT_DXA
           },
           margin: {
-            top: MARGIN_20MM_DXA,
-            bottom: MARGIN_20MM_DXA,
-            left: MARGIN_20MM_DXA,
-            right: MARGIN_20MM_DXA,
+            top: topMargin,
+            bottom: bottomMargin,
+            left: leftMargin,
+            right: rightMargin,
             header: 567, // 10 mm dari tepi atas
             footer: 567  // 10 mm dari tepi bawah
           }
@@ -385,7 +420,7 @@ function createKopSuratDocx(settings) {
 /**
  * Konversi satu node TipTap ke komponen docx
  */
-function convertTipTapNodeToDocx(node) {
+function convertTipTapNodeToDocx(node, lineSpacing = 360) {
   if (!node) return null;
 
   switch (node.type) {
@@ -394,6 +429,8 @@ function convertTipTapNodeToDocx(node) {
       const align = mapAlignment(node.attrs && node.attrs.textAlign);
       const textRuns = parseTextRuns(node.content);
       const fontSize = level === 1 ? 32 : level === 2 ? 28 : 24;
+      const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
+      const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
 
       // Beri style bold pada heading
       textRuns.forEach(r => {
@@ -404,7 +441,8 @@ function convertTipTapNodeToDocx(node) {
 
       return new Paragraph({
         alignment: align,
-        spacing: { before: 180, after: 100, line: 300 },
+        indent: indentOpt,
+        spacing: { before: 180, after: 100, line: lineSpacing },
         children: textRuns
       });
     }
@@ -412,10 +450,13 @@ function convertTipTapNodeToDocx(node) {
     case 'paragraph': {
       const align = mapAlignment(node.attrs && node.attrs.textAlign);
       const textRuns = parseTextRuns(node.content);
+      const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
+      const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
 
       return new Paragraph({
         alignment: align,
-        spacing: { after: 120, line: 300 }, // Spasi 1.25x
+        indent: indentOpt,
+        spacing: { after: 120, line: lineSpacing },
         children: textRuns.length ? textRuns : [new TextRun('')]
       });
     }
@@ -574,7 +615,7 @@ function convertTipTapNodeToDocx(node) {
 }
 
 /**
- * Parsing TextRuns dari content TipTap
+ * Parsing TextRuns dari content TipTap dengan dukungan warna teks & tabulasi (\t)
  */
 function parseTextRuns(content) {
   if (!Array.isArray(content)) return [];
@@ -585,23 +626,49 @@ function parseTextRuns(content) {
       let isBold = false;
       let isItalic = false;
       let isUnderline = false;
+      let textColor = undefined;
 
       if (Array.isArray(item.marks)) {
         for (const mark of item.marks) {
           if (mark.type === 'bold') isBold = true;
           if (mark.type === 'italic') isItalic = true;
           if (mark.type === 'underline') isUnderline = true;
+          if ((mark.type === 'textColor' || mark.type === 'textStyle') && mark.attrs && mark.attrs.color) {
+            textColor = mark.attrs.color.replace(/^#/, '');
+          }
         }
       }
 
-      runs.push(new TextRun({
-        text: item.text,
-        bold: isBold,
-        italics: isItalic,
-        underline: isUnderline ? {} : undefined,
-        size: 24, // 12pt standar Word
-        font: 'Times New Roman'
-      }));
+      const text = item.text || '';
+      if (text.includes('\t')) {
+        const parts = text.split('\t');
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i]) {
+            runs.push(new TextRun({
+              text: parts[i],
+              bold: isBold,
+              italics: isItalic,
+              underline: isUnderline ? {} : undefined,
+              color: textColor,
+              size: 24, // 12pt standar Word
+              font: 'Times New Roman'
+            }));
+          }
+          if (i < parts.length - 1) {
+            runs.push(new Tab());
+          }
+        }
+      } else {
+        runs.push(new TextRun({
+          text: text,
+          bold: isBold,
+          italics: isItalic,
+          underline: isUnderline ? {} : undefined,
+          color: textColor,
+          size: 24, // 12pt standar Word
+          font: 'Times New Roman'
+        }));
+      }
     }
   }
 

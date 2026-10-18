@@ -77,7 +77,9 @@ router.get('/dokumen/:id/export-word', requireAuth, async (req, res) => {
     const docxBuffer = await generateDocxFromTipTap({
       docData: {
         ...doc,
-        konten_json: kontenJson
+        konten_json: kontenJson,
+        margin: req.query.margin || doc.margin || '20mm',
+        line_spacing: req.query.line_spacing || doc.line_spacing || '1.5'
       },
       settings,
       includeKop: true
