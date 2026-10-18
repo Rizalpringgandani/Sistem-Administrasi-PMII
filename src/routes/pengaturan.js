@@ -59,13 +59,23 @@ router.get('/pengaturan', requireAuth, (req, res) => {
 router.post('/pengaturan', requireAuth, (req, res) => {
   const {
     nama_rayon,
+    kop_tingkat,
+    kop_lembaga,
+    kop_inggris,
+    nama_fakultas,
     nama_komisariat,
+    nama_komisariat_univ,
     nama_cabang,
     kampus,
     alamat_sekretariat,
     email_rayon,
     telepon_rayon,
     kode_rayon,
+    kode_wilayah,
+    motto_kop,
+    sertakan_kode_kabupaten,
+    kode_kabupaten,
+    reset_penomoran,
     format_nomor_surat
   } = req.body;
 
@@ -76,17 +86,27 @@ router.post('/pengaturan', requireAuth, (req, res) => {
 
   setMultiplePengaturan({
     nama_rayon,
+    kop_tingkat: kop_tingkat || 'PENGURUS RAYON',
+    kop_lembaga: kop_lembaga || 'PERGERAKAN MAHASISWA ISLAM INDONESIA',
+    kop_inggris: kop_inggris || '(Rayon Board Of Indonesian Moslem Student Movement)',
+    nama_fakultas: nama_fakultas || '',
     nama_komisariat,
+    nama_komisariat_univ: nama_komisariat_univ || '',
     nama_cabang,
-    kampus,
-    alamat_sekretariat,
-    email_rayon,
-    telepon_rayon,
-    kode_rayon,
-    format_nomor_surat
+    kampus: kampus || '',
+    alamat_sekretariat: alamat_sekretariat || '',
+    email_rayon: email_rayon || '',
+    telepon_rayon: telepon_rayon || '',
+    kode_rayon: kode_rayon || 'PR-IV',
+    kode_wilayah: kode_wilayah || 'V-02',
+    motto_kop: motto_kop || 'Dzikir, Fikir, Amal Sholeh',
+    sertakan_kode_kabupaten: sertakan_kode_kabupaten === '1' ? '1' : '0',
+    kode_kabupaten: kode_kabupaten || '',
+    reset_penomoran: reset_penomoran || 'tahunan',
+    format_nomor_surat: format_nomor_surat || '{no_total}.{panitia}{rayon}.{wilayah}.{kabupaten}{jenis}.{no_jenis}.{ttd}.{bulan}.{tahun}'
   });
 
-  req.session.flash = { success: 'Data identitas rayon berhasil disimpan.' };
+  req.session.flash = { success: 'Data identitas rayon & pengaturan persuratan berhasil disimpan.' };
   res.redirect('/pengaturan');
 });
 

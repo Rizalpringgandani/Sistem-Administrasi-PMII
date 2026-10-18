@@ -3,6 +3,7 @@
  */
 
 const { escapeHtml } = require('./layout');
+const { renderKopSuratHtml, renderFooterHtml } = require('./kop_surat');
 
 function renderTemplateEditorPage({ template = null, settings = {} }) {
   const isEdit = Boolean(template && template.id);
@@ -10,13 +11,6 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
   const kode = template ? escapeHtml(template.kode) : `TPL-${Date.now().toString().slice(-6)}`;
   const kategori = template ? escapeHtml(template.kategori || 'Undangan') : 'Undangan';
   const initialJsonStr = template && template.konten_json ? template.konten_json : '';
-
-  // Kop Surat Preview Text
-  const namaRayon = (settings.nama_rayon || 'RAYON PMII').toUpperCase();
-  const namaKomisariat = (settings.nama_komisariat || '').toUpperCase();
-  const namaCabang = (settings.nama_cabang || '').toUpperCase();
-  const alamat = escapeHtml(settings.alamat_sekretariat || 'Alamat Sekretariat');
-  const logoSrc = settings.logo_rayon || settings.logo_pmii || '/img/pmii-logo.svg';
 
   return `
     <link rel="stylesheet" href="/css/editor.css">
@@ -183,24 +177,16 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
       <div class="editor-f4-paper" id="f4-paper-container">
-        <span class="paper-meta-badge">Template Surat F4 &bull; 215 &times; 330 mm</span>
+        <span class="paper-meta-badge">Template Surat F4 &bull; 210 &times; 330 mm</span>
 
-        <!-- Tampilan Otomatis Kop Surat PMII -->
-        <div class="kop-surat-header" style="border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-          <div style="width: 75px; text-align: center; flex-shrink: 0;">
-            <img src="${logoSrc}" alt="Logo PMII" style="max-width: 70px; max-height: 85px; object-fit: contain;">
-          </div>
-          <div style="flex: 1; text-align: center; font-family: 'Times New Roman', Times, serif; color: #000000;">
-            <div style="font-size: 13pt; font-weight: bold; letter-spacing: 0.5px;">PENGURUS RAYON</div>
-            <div style="font-size: 15pt; font-weight: bold; color: #003366; letter-spacing: 0.5px;">PERGERAKAN MAHASISWA ISLAM INDONESIA</div>
-            <div style="font-size: 9.5pt; font-style: italic; color: #d99b00; margin-top: -2px;">(Indonesian Muslim Student Movement)</div>
-            <div style="font-size: 12pt; font-weight: bold; margin-top: 2px;">${namaRayon} ${namaKomisariat} ${namaCabang}</div>
-            <div style="font-size: 8.5pt; margin-top: 4px;">Sekretariat: ${alamat}</div>
-          </div>
-        </div>
+        <!-- Tampilan Otomatis Kop Surat PMII Sesuai Pedoman Surat -->
+        ${renderKopSuratHtml(settings)}
 
         <!-- Sasaran TipTap Isi Template -->
         <div id="tiptap-template-editor"></div>
+
+        <!-- Footer Halaman Motto PMII -->
+        ${renderFooterHtml(settings)}
       </div>
     </div>
 

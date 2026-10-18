@@ -220,6 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const tujuanInput = document.getElementById('doc-tujuan');
   const perihalInput = document.getElementById('doc-perihal');
   const tanggalInput = document.getElementById('doc-tanggal');
+  const noTotalInput = document.getElementById('doc-no-urut-total');
+  const noJenisInput = document.getElementById('doc-no-urut-jenis');
+  const sifatInput = document.getElementById('doc-sifat-surat');
+  const ttdInput = document.getElementById('doc-kode-penandatangan');
+  const panitiaInput = document.getElementById('doc-nama-panitia');
+  const bulanInput = document.getElementById('doc-bulan-surat');
+  const tahunInput = document.getElementById('doc-tahun-surat');
   const saveStatusText = document.getElementById('save-status-text');
 
   async function simpanKeArsip() {
@@ -234,6 +241,13 @@ document.addEventListener('DOMContentLoaded', () => {
       tujuan: tujuanInput.value,
       perihal: perihalInput.value,
       tanggal_dokumen: tanggalInput.value || new Date().toISOString().slice(0, 10),
+      no_urut_total: noTotalInput ? (noTotalInput.value || null) : null,
+      no_urut_jenis: noJenisInput ? (noJenisInput.value || null) : null,
+      sifat_surat: sifatInput ? (sifatInput.value || '01') : '01',
+      kode_penandatangan: ttdInput ? (ttdInput.value || 'A-I') : 'A-I',
+      nama_panitia: panitiaInput ? (panitiaInput.value || '') : '',
+      bulan_surat: bulanInput ? (bulanInput.value || '') : '',
+      tahun_surat: tahunInput ? (tahunInput.value || '') : '',
       konten_json: editor.getJSON(),
       konten_html: editor.getHTML()
     };

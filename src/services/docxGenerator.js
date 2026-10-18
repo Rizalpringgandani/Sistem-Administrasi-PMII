@@ -12,19 +12,21 @@ const {
   TableRow,
   TableCell,
   ImageRun,
+  Header,
+  Footer,
+  PageBreak,
   AlignmentType,
   WidthType,
-  BorderStyle,
-  convertInchesToTwip
+  BorderStyle
 } = require('docx');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// Dimensi Kertas F4 (215 x 330 mm) dalam satuan dxa (twips)
+// Dimensi Kertas F4 (21 x 33 cm) sesuai Pedoman Surat PMII (dalam satuan twips / dxa)
 // 1 mm = 56.6929 twips
-const F4_WIDTH_DXA = 12189;  // 215 mm
-const F4_HEIGHT_DXA = 18709; // 330 mm
-const MARGIN_25MM_DXA = 1417; // 25 mm = 2.5 cm
+const F4_WIDTH_DXA = 11906;  // 210 mm (21 cm)
+const F4_HEIGHT_DXA = 18709; // 330 mm (33 cm)
+const MARGIN_20MM_DXA = 1134; // 20 mm = 2.0 cm sekeliling
 
 /**
  * Menghasilkan buffer dokumen .docx dari TipTap JSON dan Kop Surat PMII
@@ -32,13 +34,7 @@ const MARGIN_25MM_DXA = 1417; // 25 mm = 2.5 cm
 async function generateDocxFromTipTap({ docData, settings, includeKop = true }) {
   const children = [];
 
-  // 1. Buat Kop Surat Resmi PMII jika diminta
-  if (includeKop) {
-    const kopElements = createKopSuratDocx(settings);
-    children.push(...kopElements);
-  }
-
-  // 2. Parse Konten TipTap JSON
+  // Parse Konten TipTap JSON
   let tiptapJson = docData.konten_json;
   if (typeof tiptapJson === 'string') {
     try {
@@ -66,7 +62,11 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
     }));
   }
 
-  // 3. Susun Dokumen Word dengan Ukuran Kertas F4
+  // Kop Surat & Footer Berulang di Setiap Halaman
+  const headerChildren = includeKop ? createKopSuratDocx(settings) : [];
+  const mottoText = settings.motto_kop || 'Dzikir, Fikir, Amal Sholeh';
+
+  // Susun Dokumen Word dengan Ukuran Kertas F4 (21 x 33 cm) & Margin 2 cm
   const doc = new Document({
     sections: [{
       properties: {
@@ -76,12 +76,38 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
             height: F4_HEIGHT_DXA
           },
           margin: {
-            top: MARGIN_25MM_DXA,
-            bottom: MARGIN_25MM_DXA,
-            left: MARGIN_25MM_DXA,
-            right: MARGIN_25MM_DXA
+            top: MARGIN_20MM_DXA,
+            bottom: MARGIN_20MM_DXA,
+            left: MARGIN_20MM_DXA,
+            right: MARGIN_20MM_DXA,
+            header: 567, // 10 mm dari tepi atas
+            footer: 567  // 10 mm dari tepi bawah
           }
         }
+      },
+      headers: includeKop ? {
+        default: new Header({
+          children: headerChildren
+        })
+      } : undefined,
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 80 },
+              children: [
+                new TextRun({
+                  text: mottoText,
+                  italics: true,
+                  color: '51A0D8',
+                  font: 'Times New Roman',
+                  size: 20 // 10pt
+                })
+              ]
+            })
+          ]
+        })
       },
       children: children
     }]
@@ -91,118 +117,204 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
 }
 
 /**
- * Membuat Header Kop Surat Resmi PMII di Word
+ * Membuat Header Kop Surat Resmi PMII di Word Sesuai PEDOMAN_SURAT.md:
+ * - Logo PMII di kiri dengan "V-02" di bawahnya (Arial Narrow Bold #51A0D8)
+ * - Teks tengah 7 baris warna #51A0D8, rata tengah, spasi 1.0
+ * - Logo Rayon/Komisariat di kanan dengan nama rayon kecil di bawahnya
+ * - Garis atas 1 1/2 pt biru #51A0D8, garis bawah 2 1/4 pt abu-abu
  */
 function createKopSuratDocx(settings) {
   const elements = [];
 
-  const namaRayon = (settings.nama_rayon || 'RAYON PMII').toUpperCase();
-  const namaKomisariat = (settings.nama_komisariat || '').toUpperCase();
-  const namaCabang = (settings.nama_cabang || '').toUpperCase();
+  const kopTingkat = (settings.kop_tingkat || 'PENGURUS RAYON').toUpperCase();
+  const kopLembaga = (settings.kop_lembaga || 'PERGERAKAN MAHASISWA ISLAM INDONESIA').toUpperCase();
+  const kopInggris = settings.kop_inggris || '(Rayon Board Of Indonesian Moslem Student Movement)';
+  const namaFakultas = (settings.nama_fakultas || settings.nama_rayon || 'FAKULTAS EKONOMI DAN BISNIS').toUpperCase();
+  const namaKomisariatUniv = (settings.nama_komisariat_univ || `${settings.nama_komisariat || ''} ${settings.kampus || ''}`).toUpperCase().trim();
   const alamat = settings.alamat_sekretariat || 'Alamat Sekretariat';
-  const kontak = settings.telepon_rayon ? `Telp/WA: ${settings.telepon_rayon}` : '';
-  const email = settings.email_rayon ? `Email: ${settings.email_rayon}` : '';
-  const kontakStr = [kontak, email].filter(Boolean).join(' | ');
+  const kontak = settings.telepon_rayon ? `Telpon : ${settings.telepon_rayon}` : '';
+  const email = settings.email_rayon ? `Email : ${settings.email_rayon}` : '';
+  const kontakStr = [kontak, email].filter(Boolean).join('  ');
+  const kodeWilayah = settings.kode_wilayah || 'V-02';
+  const namaRayonPendek = (settings.nama_rayon || 'Rayon FEB').replace(/^PENGURUS\s+RAYON\s+/i, '');
 
-  // Periksa apakah ada logo lokal yang bisa disematkan
-  let logoRun = null;
-  let logoPath = null;
-  if (settings.logo_rayon && fs.existsSync(path.join(__dirname, '../../public', settings.logo_rayon))) {
-    logoPath = path.join(__dirname, '../../public', settings.logo_rayon);
-  } else if (fs.existsSync(path.join(__dirname, '../../public/img/pmii-logo.png'))) {
-    logoPath = path.join(__dirname, '../../public/img/pmii-logo.png');
-  }
-
-  if (logoPath && (logoPath.endsWith('.png') || logoPath.endsWith('.jpg') || logoPath.endsWith('.jpeg'))) {
+  // 1. Logo Kiri: Logo PMII
+  let pmiiLogoPath = path.join(__dirname, '../../public/img/pmii-logo.png');
+  let leftCellChildren = [];
+  if (fs.existsSync(pmiiLogoPath)) {
     try {
-      logoRun = new ImageRun({
-        data: fs.readFileSync(logoPath),
-        transformation: {
-          width: 75,
-          height: 85
-        }
-      });
+      leftCellChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 20 },
+          children: [
+            new ImageRun({
+              data: fs.readFileSync(pmiiLogoPath),
+              transformation: { width: 50, height: 58 }
+            })
+          ]
+        })
+      );
     } catch (e) {
-      console.warn('Gagal memuat gambar logo untuk kop Word:', e.message);
+      console.warn('Gagal memuat logo PMII:', e.message);
     }
   }
 
-  // Kop disusun menggunakan tabel 2 kolom borderless
-  const leftCellChildren = logoRun ? [
+  // Teks kode wilayah di bawah logo PMII
+  leftCellChildren.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [logoRun]
-    })
-  ] : [];
-
-  const rightCellChildren = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { line: 240, after: 40 },
+      spacing: { before: 0, after: 0 },
       children: [
         new TextRun({
-          text: 'PENGURUS RAYON',
-          bold: true,
-          size: 24, // 12pt
-          font: 'Times New Roman'
-        })
-      ]
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { line: 240, after: 40 },
-      children: [
-        new TextRun({
-          text: 'PERGERAKAN MAHASISWA ISLAM INDONESIA',
-          bold: true,
-          size: 28, // 14pt
-          color: '003366',
-          font: 'Times New Roman'
-        })
-      ]
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { line: 240, after: 40 },
-      children: [
-        new TextRun({
-          text: '(Indonesian Muslim Student Movement)',
-          italics: true,
-          size: 18, // 9pt
-          color: 'D99B00',
-          font: 'Times New Roman'
-        })
-      ]
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { line: 240, after: 60 },
-      children: [
-        new TextRun({
-          text: `${namaRayon} ${namaKomisariat} ${namaCabang}`,
+          text: kodeWilayah,
           bold: true,
           size: 22, // 11pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    })
+  );
+
+  // 2. Teks Tengah (Warna #51A0D8, spasi 1.0)
+  const centerCellChildren = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 220, before: 0, after: 15 },
+      children: [
+        new TextRun({
+          text: kopTingkat,
+          bold: true,
+          size: 26, // 13pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 220, before: 0, after: 15 },
+      children: [
+        new TextRun({
+          text: kopLembaga,
+          bold: true,
+          size: 27, // 13.5pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 220, before: 0, after: 15 },
+      children: [
+        new TextRun({
+          text: kopInggris,
+          italics: true,
+          size: 20, // 10pt
+          color: '51A0D8',
           font: 'Times New Roman'
         })
       ]
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { line: 220, after: 80 },
+      spacing: { line: 220, before: 0, after: 15 },
       children: [
         new TextRun({
-          text: alamat,
-          size: 17, // 8.5pt
-          font: 'Times New Roman'
-        }),
-        kontakStr ? new TextRun({
-          text: `\n${kontakStr}`,
-          size: 17,
-          font: 'Times New Roman'
-        }) : new TextRun({ text: '' })
+          text: namaFakultas,
+          bold: true,
+          size: 26, // 13pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 220, before: 0, after: 30 },
+      children: [
+        new TextRun({
+          text: namaKomisariatUniv,
+          bold: true,
+          size: 26, // 13pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 210, before: 0, after: 15 },
+      children: [
+        new TextRun({
+          text: `Sekretariat : ${alamat}`,
+          bold: true,
+          size: 19, // 9.5pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
+      ]
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { line: 210, before: 0, after: 30 },
+      children: [
+        new TextRun({
+          text: kontakStr,
+          bold: true,
+          size: 19, // 9.5pt
+          color: '51A0D8',
+          font: 'Arial'
+        })
       ]
     })
   ];
+
+  // 3. Logo Kanan: Logo Rayon / Komisariat
+  let rayonLogoPath = null;
+  if (settings.logo_rayon && fs.existsSync(path.join(__dirname, '../../public', settings.logo_rayon))) {
+    rayonLogoPath = path.join(__dirname, '../../public', settings.logo_rayon);
+  } else if (fs.existsSync(pmiiLogoPath)) {
+    rayonLogoPath = pmiiLogoPath;
+  }
+
+  let rightCellChildren = [];
+  if (rayonLogoPath) {
+    try {
+      rightCellChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 20 },
+          children: [
+            new ImageRun({
+              data: fs.readFileSync(rayonLogoPath),
+              transformation: { width: 50, height: 58 }
+            })
+          ]
+        })
+      );
+    } catch (e) {
+      console.warn('Gagal memuat logo rayon:', e.message);
+    }
+  }
+
+  rightCellChildren.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 0, line: 180 },
+      children: [
+        new TextRun({
+          text: `${namaRayonPendek}\n${settings.nama_komisariat || ''}`,
+          bold: true,
+          size: 14, // 7pt
+          color: '000000',
+          font: 'Arial'
+        })
+      ]
+    })
+  );
 
   const noBorder = {
     top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
@@ -221,14 +333,19 @@ function createKopSuratDocx(settings) {
       new TableRow({
         children: [
           new TableCell({
-            width: { size: 18, type: WidthType.PERCENTAGE },
+            width: { size: 14, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: leftCellChildren.length ? leftCellChildren : [new Paragraph({})]
           }),
           new TableCell({
-            width: { size: 82, type: WidthType.PERCENTAGE },
+            width: { size: 72, type: WidthType.PERCENTAGE },
             borders: noBorder,
-            children: rightCellChildren
+            children: centerCellChildren
+          }),
+          new TableCell({
+            width: { size: 14, type: WidthType.PERCENTAGE },
+            borders: noBorder,
+            children: rightCellChildren.length ? rightCellChildren : [new Paragraph({})]
           })
         ]
       })
@@ -237,15 +354,26 @@ function createKopSuratDocx(settings) {
 
   elements.push(kopTable);
 
-  // Garis Pembatas Ganda Tebal Kop Surat
+  // Garis Pembatas Kop Ganda:
+  // Garis atas 1 1/2 pt (#51A0D8) dan Garis bawah 2 1/4 pt (#808080)
   elements.push(
     new Paragraph({
-      spacing: { before: 80, after: 200 },
+      spacing: { before: 40, after: 20 },
       border: {
         bottom: {
-          style: BorderStyle.DOUBLE,
-          size: 18,
-          color: '000000'
+          style: BorderStyle.SINGLE,
+          size: 12, // 1.5 pt
+          color: '51A0D8'
+        }
+      }
+    }),
+    new Paragraph({
+      spacing: { before: 0, after: 120 },
+      border: {
+        bottom: {
+          style: BorderStyle.SINGLE,
+          size: 18, // 2.25 pt
+          color: '808080'
         }
       }
     })
@@ -333,8 +461,31 @@ function convertTipTapNodeToDocx(node) {
       return items;
     }
 
+    case 'horizontalRule': {
+      return new Paragraph({
+        children: [new PageBreak()]
+      });
+    }
+
     case 'table': {
       const rows = [];
+      let hasHeader = false;
+
+      // Periksa apakah tabel ini memiliki baris judul (header)
+      if (Array.isArray(node.content)) {
+        for (const tr of node.content) {
+          if (Array.isArray(tr.content)) {
+            for (const tc of tr.content) {
+              if (tc.type === 'tableHeader') {
+                hasHeader = true;
+                break;
+              }
+            }
+          }
+          if (hasHeader) break;
+        }
+      }
+
       if (Array.isArray(node.content)) {
         for (const tr of node.content) {
           if (tr.type === 'tableRow' && Array.isArray(tr.content)) {
@@ -354,15 +505,24 @@ function convertTipTapNodeToDocx(node) {
                 cellParagraphs.push(new Paragraph(''));
               }
 
+              // Jika tabel berkepala (seperti susunan acara): beri garis hitam & header kuning (#FEF08A)
+              // Jika tabel tata letak (seperti rincian acara atau tanda tangan): buat tanpa border (borderless)
+              const cellBorders = hasHeader ? {
+                top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+                left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+                right: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
+              } : {
+                top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+              };
+
               cells.push(new TableCell({
                 children: cellParagraphs,
-                shading: isHeader ? { fill: 'F1F5F9' } : undefined,
-                borders: {
-                  top: { style: BorderStyle.SINGLE, size: 4, color: '334155' },
-                  bottom: { style: BorderStyle.SINGLE, size: 4, color: '334155' },
-                  left: { style: BorderStyle.SINGLE, size: 4, color: '334155' },
-                  right: { style: BorderStyle.SINGLE, size: 4, color: '334155' }
-                }
+                shading: isHeader ? { fill: 'FEF08A' } : undefined,
+                borders: cellBorders
               }));
             }
             rows.push(new TableRow({ children: cells }));

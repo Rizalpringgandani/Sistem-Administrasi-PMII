@@ -4,6 +4,7 @@ const {
   db,
   getAllPengaturan,
   generateNomorSurat,
+  generateNomorSuratPedoman,
   replaceVariablesInTipTapJson
 } = require('../database/db');
 const { requireAuth } = require('../middleware/auth');
@@ -11,6 +12,20 @@ const { renderLayout } = require('../views/layout');
 const { renderSuratListPage } = require('../views/surat_list');
 const { renderSuratFormPage } = require('../views/surat_form');
 const { renderSuratEditorPage } = require('../views/surat_editor');
+
+/**
+ * API Hitung Usulan Nomor Surat Pedoman PMII
+ */
+router.get('/api/surat/hitung-nomor', requireAuth, (req, res) => {
+  const { sifat_surat = '01', kode_penandatangan = 'A-I', nama_panitia = '', tanggal = null } = req.query;
+  const result = generateNomorSuratPedoman({
+    sifatSurat: sifat_surat,
+    kodePenandatangan: kode_penandatangan,
+    namaPanitia: nama_panitia,
+    tanggal: tanggal || null
+  });
+  res.json({ success: true, data: result });
+});
 
 /**
  * Halaman Utama Surat Menyurat
@@ -73,19 +88,16 @@ router.get('/surat/baru', requireAuth, (req, res) => {
     selectedTemplate = templates[0];
   }
 
-  // Hitung nomor surat usulan otomatis
-  let kodeKategori = '01';
-  if (selectedTemplate && selectedTemplate.kategori) {
-    const kat = selectedTemplate.kategori.toLowerCase();
-    if (kat.includes('undangan')) kodeKategori = '01';
-    else if (kat.includes('permohonan')) kodeKategori = '02';
-    else if (kat.includes('pemberitahuan')) kodeKategori = '03';
-    else if (kat.includes('mandat')) kodeKategori = '04';
-    else if (kat.includes('keterangan')) kodeKategori = '05';
-    else if (kat.includes('sk')) kodeKategori = '06';
-  }
+  // Hitung nomor surat usulan otomatis sesuai PPTA PMII
+  const sifatSurat = req.query.sifat_surat || '01';
+  const kodeTtd = req.query.kode_ttd || 'A-I';
+  const namaPanitia = req.query.nama_panitia || '';
 
-  const nomorUsulan = generateNomorSurat(kodeKategori);
+  const nomorUsulan = generateNomorSuratPedoman({
+    sifatSurat,
+    kodePenandatangan: kodeTtd,
+    namaPanitia
+  });
 
   // Periode aktif untuk nama ketua & sekretaris otomatis
   const activePeriode = db.prepare('SELECT * FROM periode WHERE status_aktif = 1 LIMIT 1').get() || null;
@@ -113,7 +125,17 @@ router.get('/surat/baru', requireAuth, (req, res) => {
  * Proses Pengisian Template -> Membuka Dokumen yang Terisi di Editor F4
  */
 router.post('/surat/proses-template', requireAuth, (req, res) => {
-  const { template_id, vars = {} } = req.body;
+  const {
+    template_id,
+    vars = {},
+    no_urut_total,
+    no_urut_jenis,
+    sifat_surat,
+    kode_penandatangan,
+    nama_panitia,
+    bulan_surat,
+    tahun_surat
+  } = req.body;
   const settings = getAllPengaturan();
 
   const template = db.prepare('SELECT * FROM template WHERE id = ?').get(template_id);
@@ -141,6 +163,13 @@ router.post('/surat/proses-template', requireAuth, (req, res) => {
     tanggal_dokumen: vars.tanggal_surat || new Date().toISOString().slice(0, 10),
     tujuan: vars.tujuan || '',
     perihal: vars.perihal || template.judul,
+    no_urut_total: no_urut_total ? parseInt(no_urut_total, 10) : null,
+    no_urut_jenis: no_urut_jenis ? parseInt(no_urut_jenis, 10) : null,
+    sifat_surat: sifat_surat || '01',
+    kode_penandatangan: kode_penandatangan || 'A-I',
+    nama_panitia: nama_panitia || '',
+    bulan_surat: bulan_surat || '',
+    tahun_surat: tahun_surat ? parseInt(tahun_surat, 10) : new Date().getFullYear(),
     konten_json: filledJson,
     konten_html: ''
   };
@@ -215,6 +244,13 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
     tujuan,
     perihal,
     tanggal_dokumen,
+    no_urut_total,
+    no_urut_jenis,
+    sifat_surat,
+    kode_penandatangan,
+    nama_panitia,
+    bulan_surat,
+    tahun_surat,
     konten_json,
     konten_html
   } = req.body;
@@ -226,24 +262,82 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
   const jsonStr = typeof konten_json === 'string' ? konten_json : JSON.stringify(konten_json);
   const htmlStr = konten_html || '';
 
+  // Fallback parsing jika tidak dikirim dari form namun nomor_dokumen mengikuti standar titik
+  let parsedTotal = no_urut_total ? parseInt(no_urut_total, 10) : null;
+  let parsedJenis = no_urut_jenis ? parseInt(no_urut_jenis, 10) : null;
+  let parsedSifat = sifat_surat || null;
+  let parsedTtd = kode_penandatangan || null;
+  let parsedBulan = bulan_surat || null;
+  let parsedTahun = tahun_surat ? parseInt(tahun_surat, 10) : null;
+
+  if (nomor_dokumen && (!parsedTotal || !parsedJenis)) {
+    const parts = nomor_dokumen.split('.');
+    if (parts.length >= 6) {
+      if (!parsedTotal && !isNaN(parseInt(parts[0], 10))) parsedTotal = parseInt(parts[0], 10);
+      // Format 9 bagian: [0]NoTotal.[1]Rayon/Panitia.[2]Wilayah.[3]Jenis.[4]NoJenis.[5]Ttd.[6]Bulan.[7]Tahun
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i] === '01' || parts[i] === '02') {
+          if (!parsedSifat) parsedSifat = parts[i];
+          if (!parsedJenis && i + 1 < parts.length && !isNaN(parseInt(parts[i + 1], 10))) {
+            parsedJenis = parseInt(parts[i + 1], 10);
+          }
+        }
+      }
+    }
+  }
+
+  if (!parsedTahun) {
+    const d = tanggal_dokumen ? new Date(tanggal_dokumen) : new Date();
+    parsedTahun = isNaN(d.getFullYear()) ? new Date().getFullYear() : d.getFullYear();
+  }
+  if (!parsedBulan) {
+    const d = tanggal_dokumen ? new Date(tanggal_dokumen) : new Date();
+    parsedBulan = String(isNaN(d.getMonth()) ? (new Date().getMonth() + 1) : (d.getMonth() + 1)).padStart(2, '0');
+  }
+
   try {
     if (id) {
       // Perbarui dokumen yang sudah ada di arsip
       const stmt = db.prepare(`
         UPDATE dokumen 
         SET judul = ?, nomor_dokumen = ?, tujuan = ?, perihal = ?, tanggal_dokumen = ?,
+            no_urut_total = COALESCE(?, no_urut_total),
+            no_urut_jenis = COALESCE(?, no_urut_jenis),
+            sifat_surat = COALESCE(?, sifat_surat),
+            kode_penandatangan = COALESCE(?, kode_penandatangan),
+            nama_panitia = COALESCE(?, nama_panitia),
+            bulan_surat = COALESCE(?, bulan_surat),
+            tahun_surat = COALESCE(?, tahun_surat),
             konten_json = ?, konten_html = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-      stmt.run(judul, nomor_dokumen, tujuan || '', perihal || '', tanggal_dokumen || '', jsonStr, htmlStr, id);
+      stmt.run(
+        judul,
+        nomor_dokumen,
+        tujuan || '',
+        perihal || '',
+        tanggal_dokumen || '',
+        parsedTotal,
+        parsedJenis,
+        parsedSifat,
+        parsedTtd,
+        nama_panitia !== undefined ? nama_panitia : null,
+        parsedBulan,
+        parsedTahun,
+        jsonStr,
+        htmlStr,
+        id
+      );
       return res.json({ success: true, dokumenId: id, message: 'Arsip dokumen berhasil diperbarui.' });
     } else {
       // Masukkan dokumen baru ke arsip
       const stmt = db.prepare(`
         INSERT INTO dokumen (
           judul, nomor_dokumen, jenis, template_id, tujuan, perihal,
-          tanggal_dokumen, konten_json, konten_html, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'diarsipkan')
+          tanggal_dokumen, no_urut_total, no_urut_jenis, sifat_surat,
+          kode_penandatangan, nama_panitia, bulan_surat, tahun_surat,
+          konten_json, konten_html, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'diarsipkan')
       `);
       const result = stmt.run(
         judul,
@@ -253,6 +347,13 @@ router.post('/api/surat/simpan-arsip', requireAuth, (req, res) => {
         tujuan || '',
         perihal || '',
         tanggal_dokumen || '',
+        parsedTotal,
+        parsedJenis,
+        parsedSifat || '01',
+        parsedTtd || 'A-I',
+        nama_panitia || '',
+        parsedBulan,
+        parsedTahun,
         jsonStr,
         htmlStr
       );

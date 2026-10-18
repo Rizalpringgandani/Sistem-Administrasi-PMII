@@ -10,7 +10,14 @@ const session = require('express-session');
 
 console.log('--- MEMULAI PENGUJIAN TAHAP 3 (TEMPLATE, SURAT, ARSIP, EXPORT WORD/PDF) ---');
 
-const { db, getAllPengaturan, generateNomorSurat, extractVariablesFromTipTap, replaceVariablesInTipTapJson } = require('../src/database/db');
+const {
+  db,
+  getAllPengaturan,
+  generateNomorSurat,
+  generateNomorSuratPedoman,
+  extractVariablesFromTipTap,
+  replaceVariablesInTipTapJson
+} = require('../src/database/db');
 const { generateDocxFromTipTap } = require('../src/services/docxGenerator');
 
 // 1. Verifikasi Data Bawaan Template
@@ -18,11 +25,26 @@ const initialTemplates = db.prepare('SELECT * FROM template').all();
 assert.ok(initialTemplates.length >= 2, 'Harus ada minimal 2 template bawaan sistem');
 console.log(`✓ Template bawaan terverifikasi (${initialTemplates.length} template).`);
 
-// 2. Verifikasi Fungsi Nomor Surat Otomatis
+// 2. Verifikasi Fungsi Nomor Surat Otomatis & Standar PPTA (2 Counter Mandiri)
 const usulanNomor = generateNomorSurat('01');
 assert.ok(usulanNomor.nomor, 'Nomor surat usulan harus terbuat');
 assert.ok(usulanNomor.nomor.includes('2026'), 'Nomor surat harus memuat tahun');
-console.log('✓ Nomor surat otomatis terverifikasi:', usulanNomor.nomor);
+
+// Uji 2 Counter Mandiri PPTA
+const noInternal = generateNomorSuratPedoman({ sifatSurat: '01', kodePenandatangan: 'A-I' });
+const noEksternal = generateNomorSuratPedoman({ sifatSurat: '02', kodePenandatangan: 'B-I' });
+const noPanitia = generateNomorSuratPedoman({ sifatSurat: '01', kodePenandatangan: 'C-I', namaPanitia: 'PANPEL-RTAR-V' });
+
+assert.ok(noInternal.nomor.includes('.01.'), 'Nomor internal harus memuat kode sifat 01');
+assert.ok(noInternal.nomor.includes('.A-I.'), 'Nomor internal harus memuat ttd A-I');
+assert.ok(noEksternal.nomor.includes('.02.'), 'Nomor eksternal harus memuat kode sifat 02');
+assert.ok(noEksternal.nomor.includes('.B-I.'), 'Nomor eksternal harus memuat ttd B-I');
+assert.ok(noPanitia.nomor.includes('PANPEL-RTAR-V'), 'Nomor panitia harus memuat nama panitia');
+assert.ok(noInternal.no_urut_total >= 1, 'Counter total harus >= 1');
+assert.ok(noInternal.no_urut_jenis >= 1, 'Counter jenis harus >= 1');
+console.log('✓ Nomor surat otomatis PPTA 2-counter terverifikasi:', noInternal.nomor);
+console.log('  Eksternal:', noEksternal.nomor);
+console.log('  Panitia:', noPanitia.nomor);
 
 // 3. Verifikasi Ekstraksi & Substitusi Variabel
 const testTipTap = {
@@ -123,36 +145,54 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.strictEqual(resSurat.status, 200);
       console.log('✓ Endpoint GET /surat terverifikasi.');
 
+      // Test API Hitung Nomor Usulan
+      const resHitung = await fetch(`http://localhost:${port}/api/surat/hitung-nomor?sifat_surat=02&kode_penandatangan=C-I&nama_panitia=PANPEL-MAPABA`, { headers: { 'Cookie': cookieHeader } });
+      assert.strictEqual(resHitung.status, 200);
+      const dataHitung = await resHitung.json();
+      assert.strictEqual(dataHitung.success, true);
+      assert.ok(dataHitung.data.nomor.includes('.02.'), 'API hitung nomor harus mencerminkan sifat 02');
+      assert.ok(dataHitung.data.nomor.includes('PANPEL-MAPABA'), 'API hitung nomor harus mencerminkan nama panitia');
+      console.log('✓ Endpoint API /api/surat/hitung-nomor terverifikasi.');
+
       const resSuratBaru = await fetch(`http://localhost:${port}/surat/baru?template_id=${newTplId}`, { headers: { 'Cookie': cookieHeader } });
       assert.strictEqual(resSuratBaru.status, 200);
       const textSuratBaru = await resSuratBaru.text();
       assert.ok(textSuratBaru.includes('nama_penerima'), 'Form harus mendeteksi variabel nama_penerima');
-      console.log('✓ Formulir isian variabel otomatis dari template terverifikasi.');
+      assert.ok(textSuratBaru.includes('select-sifat-surat'), 'Form harus memuat opsi sifat surat PPTA');
+      console.log('✓ Formulir isian variabel otomatis dari template & PPTA terverifikasi.');
 
       // D. Test Proses Template -> Buka di Editor
       const resProses = await fetch(`http://localhost:${port}/surat/proses-template`, {
         method: 'POST',
         headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `template_id=${newTplId}&vars[nama_penerima]=Sahabat%20Zaid`,
+        body: `template_id=${newTplId}&vars[nama_penerima]=Sahabat%20Zaid&sifat_surat=01&kode_penandatangan=A-I&no_urut_total=5&no_urut_jenis=5`,
         redirect: 'manual'
       });
       assert.strictEqual(resProses.status, 200);
       const htmlProses = await resProses.text();
       assert.ok(htmlProses.includes('Sahabat Zaid'), 'Dokumen di editor harus memuat nilai variabel terisi');
+      assert.ok(htmlProses.includes('doc-no-urut-total'), 'Editor harus memuat input hidden counter');
       console.log('✓ Proses substitusi template ke editor F4 terverifikasi.');
 
-      // E. Test Simpan ke Arsip Dokumen
+      // E. Test Simpan ke Arsip Dokumen dengan Kolom PPTA Terpisah
       const resSimpanArsip = await fetch(`http://localhost:${port}/api/surat/simpan-arsip`, {
         method: 'POST',
         headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           judul: 'Surat Mandat Delegasi PMII',
-          nomor_dokumen: '005/PR-PMII/X/2026',
+          nomor_dokumen: '005.PR-IV.V-02.01.005.A-I.10.2026',
           jenis: 'surat_keluar',
           template_id: newTplId,
           tujuan: 'Sahabat Zaid',
           perihal: 'Surat Mandat',
           tanggal_dokumen: '2026-10-17',
+          no_urut_total: 5,
+          no_urut_jenis: 5,
+          sifat_surat: '01',
+          kode_penandatangan: 'A-I',
+          nama_panitia: '',
+          bulan_surat: '10',
+          tahun_surat: 2026,
           konten_json: {
             type: 'doc',
             content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Memberikan mandat kepada Sahabat Zaid.' }] }]
@@ -164,14 +204,22 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       const arsipSaveResult = await resSimpanArsip.json();
       assert.strictEqual(arsipSaveResult.success, true);
       const docId = arsipSaveResult.dokumenId;
-      console.log('✓ Simpan surat ke tabel dokumen arsip terverifikasi (Dokumen ID:', docId, ').');
+
+      // Verifikasi kolom tersimpan di database SQLite
+      const savedDoc = db.prepare('SELECT * FROM dokumen WHERE id = ?').get(docId);
+      assert.strictEqual(savedDoc.sifat_surat, '01');
+      assert.strictEqual(savedDoc.no_urut_total, 5);
+      assert.strictEqual(savedDoc.no_urut_jenis, 5);
+      assert.strictEqual(savedDoc.kode_penandatangan, 'A-I');
+      console.log('✓ Simpan surat ke tabel dokumen arsip dengan kolom PPTA mandiri terverifikasi (Dokumen ID:', docId, ').');
 
       // F. Test Menu Arsip
       const resArsip = await fetch(`http://localhost:${port}/arsip`, { headers: { 'Cookie': cookieHeader } });
       assert.strictEqual(resArsip.status, 200);
       const textArsip = await resArsip.text();
-      assert.ok(textArsip.includes('005/PR-PMII/X/2026'), 'Halaman arsip harus memuat surat yang baru disimpan');
-      console.log('✓ Halaman arsip menampilkan surat terverifikasi.');
+      assert.ok(textArsip.includes('005.PR-IV.V-02.01.005.A-I.10.2026'), 'Halaman arsip harus memuat surat yang baru disimpan');
+      assert.ok(textArsip.includes('Internal'), 'Halaman arsip harus memuat badge sifat surat Internal');
+      console.log('✓ Halaman arsip menampilkan surat dengan badge PPTA terverifikasi.');
 
       // G. Test Export Word (.docx)
       const resExportWord = await fetch(`http://localhost:${port}/dokumen/${docId}/export-word`, { headers: { 'Cookie': cookieHeader } });
@@ -192,7 +240,7 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       const resBuka = await fetch(`http://localhost:${port}/surat/buka/${docId}`, { headers: { 'Cookie': cookieHeader } });
       assert.strictEqual(resBuka.status, 200);
       const htmlBuka = await resBuka.text();
-      assert.ok(htmlBuka.includes('005/PR-PMII/X/2026'), 'Editor harus memuat nomor dokumen saat dibuka ulang');
+      assert.ok(htmlBuka.includes('005.PR-IV.V-02.01.005.A-I.10.2026'), 'Editor harus memuat nomor dokumen saat dibuka ulang');
       console.log('✓ Buka ulang dokumen arsip di editor F4 terverifikasi.');
 
       // J. Test Hapus Dokumen Arsip

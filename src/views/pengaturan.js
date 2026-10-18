@@ -17,9 +17,20 @@ function renderPengaturanPage({ settings }) {
   const logoRayon = settings.logo_rayon || '';
   const logoPmii = settings.logo_pmii || '/img/pmii-logo.svg';
 
+  const kopTingkat = escapeHtml(settings.kop_tingkat || 'PENGURUS RAYON');
+  const kopLembaga = escapeHtml(settings.kop_lembaga || 'PERGERAKAN MAHASISWA ISLAM INDONESIA');
+  const kopInggris = escapeHtml(settings.kop_inggris || '(Rayon Board Of Indonesian Moslem Student Movement)');
+  const namaFakultas = escapeHtml(settings.nama_fakultas || settings.nama_rayon || 'FAKULTAS EKONOMI DAN BISNIS');
+  const namaKomisariatUniv = escapeHtml(settings.nama_komisariat_univ || `${settings.nama_komisariat || ''} ${settings.kampus || ''}`.trim());
+  const kodeWilayah = escapeHtml(settings.kode_wilayah || 'V-02');
+  const mottoKop = escapeHtml(settings.motto_kop || 'Dzikir, Fikir, Amal Sholeh');
+  const sertakanKabupaten = settings.sertakan_kode_kabupaten === '1';
+  const kodeKabupaten = escapeHtml(settings.kode_kabupaten || '');
+  const resetPenomoran = settings.reset_penomoran || 'tahunan';
+
   return `
     <div class="grid-cols-3">
-      <!-- Kolom 1 & 2: Form Identitas Organisasi -->
+      <!-- Kolom 1 & 2: Form Identitas Organisasi & Kop Surat -->
       <div style="grid-column: span 2;">
         <div class="card">
           <div class="card-header">
@@ -27,7 +38,7 @@ function renderPengaturanPage({ settings }) {
               <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
               </svg>
-              Identitas Rayon & Organisasi
+              Identitas Rayon & Kop Surat Resmi PMII
             </h3>
           </div>
           <form action="/pengaturan" method="POST">
@@ -35,60 +46,132 @@ function renderPengaturanPage({ settings }) {
               <div class="grid-cols-2">
                 <div class="form-group">
                   <label class="form-label" for="nama_rayon">Nama Rayon <span class="required">*</span></label>
-                  <input type="text" id="nama_rayon" name="nama_rayon" class="form-control" value="${namaRayon}" required placeholder="Contoh: Rayon Pancasila">
+                  <input type="text" id="nama_rayon" name="nama_rayon" class="form-control" value="${namaRayon}" required placeholder="Contoh: Rayon Fakultas Ekonomi dan Bisnis">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="nama_komisariat">Komisariat <span class="required">*</span></label>
-                  <input type="text" id="nama_komisariat" name="nama_komisariat" class="form-control" value="${namaKomisariat}" required placeholder="Contoh: Komisariat Raden Rahmat">
+                  <label class="form-label" for="nama_fakultas">Nama Fakultas (Huruf Kapital pada Kop)</label>
+                  <input type="text" id="nama_fakultas" name="nama_fakultas" class="form-control" value="${namaFakultas}" placeholder="Contoh: FAKULTAS EKONOMI DAN BISNIS">
                 </div>
               </div>
 
               <div class="grid-cols-2">
                 <div class="form-group">
+                  <label class="form-label" for="nama_komisariat">Komisariat <span class="required">*</span></label>
+                  <input type="text" id="nama_komisariat" name="nama_komisariat" class="form-control" value="${namaKomisariat}" required placeholder="Contoh: Komisariat Universitas Pelita Bangsa">
+                </div>
+
+                <div class="form-group">
                   <label class="form-label" for="nama_cabang">Pengurus Cabang (PC) <span class="required">*</span></label>
-                  <input type="text" id="nama_cabang" name="nama_cabang" class="form-control" value="${namaCabang}" required placeholder="Contoh: PC PMII Kota Malang">
+                  <input type="text" id="nama_cabang" name="nama_cabang" class="form-control" value="${namaCabang}" required placeholder="Contoh: PC PMII Kab. Bekasi">
+                </div>
+              </div>
+
+              <div class="grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label" for="nama_komisariat_univ">Nama Komisariat & Kampus pada Kop (Kapital)</label>
+                  <input type="text" id="nama_komisariat_univ" name="nama_komisariat_univ" class="form-control" value="${namaKomisariatUniv}" placeholder="Contoh: KOMISARIAT UNIVERSITAS PELITA BANGSA">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label" for="kampus">Perguruan Tinggi / Kampus</label>
-                  <input type="text" id="kampus" name="kampus" class="form-control" value="${kampus}" placeholder="Contoh: UIN Maulana Malik Ibrahim">
+                  <input type="text" id="kampus" name="kampus" class="form-control" value="${kampus}" placeholder="Contoh: Universitas Pelita Bangsa">
+                </div>
+              </div>
+
+              <div class="grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label" for="kop_tingkat">Tingkat Kepengurusan Kop (Baris 1)</label>
+                  <input type="text" id="kop_tingkat" name="kop_tingkat" class="form-control" value="${kopTingkat}">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="kop_lembaga">Nama Lembaga Kop (Baris 2)</label>
+                  <input type="text" id="kop_lembaga" name="kop_lembaga" class="form-control" value="${kopLembaga}">
+                </div>
+              </div>
+
+              <div class="grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label" for="kop_inggris">Terjemahan Bahasa Inggris Kop (Baris 3 Miring)</label>
+                  <input type="text" id="kop_inggris" name="kop_inggris" class="form-control" value="${kopInggris}">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="motto_kop">Motto Kaki Dokumen (Footer Berulang)</label>
+                  <input type="text" id="motto_kop" name="motto_kop" class="form-control" value="${mottoKop}">
                 </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label" for="alamat_sekretariat">Alamat Sekretariat Lengkap</label>
-                <textarea id="alamat_sekretariat" name="alamat_sekretariat" class="form-control" placeholder="Alamat jalan, kelurahan, kecamatan, dan kota sekretariat">${alamat}</textarea>
-                <div class="form-hint">Alamat ini otomatis dicantumkan pada kop surat dan dokumen resmi rayon.</div>
+                <textarea id="alamat_sekretariat" name="alamat_sekretariat" class="form-control" placeholder="Alamat jalan, RT/RW, kelurahan, kecamatan, dan kabupaten/kota">${alamat}</textarea>
+                <div class="form-hint">Alamat ini otomatis dicantumkan pada kop surat resmi (#51A0D8).</div>
               </div>
 
               <div class="grid-cols-2">
                 <div class="form-group">
                   <label class="form-label" for="email_rayon">Email Resmi Rayon</label>
-                  <input type="email" id="email_rayon" name="email_rayon" class="form-control" value="${email}" placeholder="rayon@pmii.org">
+                  <input type="email" id="email_rayon" name="email_rayon" class="form-control" value="${email}" placeholder="rayonfebupb@gmail.com">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="telepon_rayon">Nomor Kontak / WhatsApp Sekretariat</label>
-                  <input type="text" id="telepon_rayon" name="telepon_rayon" class="form-control" value="${telepon}" placeholder="08xxxxxxxxxx">
+                  <label class="form-label" for="telepon_rayon">Nomor Kontak / Telepon Sekretariat</label>
+                  <input type="text" id="telepon_rayon" name="telepon_rayon" class="form-control" value="${telepon}" placeholder="0878xxxxxxxx, 0813xxxxxxxx">
                 </div>
               </div>
 
               <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.25rem 0;">
 
-              <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem;">Standar Penomoran Surat PMII</h4>
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem;">
+                Standar Penomoran Surat PMII (Pedoman PPTA & Contoh Rayon)
+              </h4>
 
-              <div class="grid-cols-2">
+              <div class="grid-cols-3">
                 <div class="form-group">
-                  <label class="form-label" for="kode_rayon">Kode Singkatan Rayon</label>
-                  <input type="text" id="kode_rayon" name="kode_rayon" class="form-control" value="${kodeRayon}" placeholder="Contoh: PR-PANCASILA">
-                  <div class="form-hint">Kode rayon dalam penomoran surat.</div>
+                  <label class="form-label" for="kode_rayon">Tingkat & Periode Rayon</label>
+                  <input type="text" id="kode_rayon" name="kode_rayon" class="form-control" value="${kodeRayon}" placeholder="Contoh: PR-IV">
+                  <div class="form-hint">Contoh: <code>PR-IV</code> (Rayon ke-4).</div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="format_nomor_surat">Format Nomor Surat Bawaan</label>
-                  <input type="text" id="format_nomor_surat" name="format_nomor_surat" class="form-control" value="${formatNomor}">
-                  <div class="form-hint">Variabel: <code>{no}</code>, <code>{kd}</code>, <code>{rayon}</code>, <code>{romawi}</code>, <code>{tahun}</code></div>
+                  <label class="form-label" for="kode_wilayah">Kode Wilayah (PMII)</label>
+                  <input type="text" id="kode_wilayah" name="kode_wilayah" class="form-control" value="${kodeWilayah}" placeholder="Contoh: V-02">
+                  <div class="form-hint">Jawa Barat: <code>V-02</code>.</div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="reset_penomoran">Aturan Reset Nomor Urut</label>
+                  <select id="reset_penomoran" name="reset_penomoran" class="form-control">
+                    <option value="tahunan" ${resetPenomoran === 'tahunan' ? 'selected' : ''}>Reset Setiap Tahun (Bawaan)</option>
+                    <option value="periode" ${resetPenomoran === 'periode' ? 'selected' : ''}>Reset Setiap Periode Kepengurusan</option>
+                    <option value="tidak_pernah" ${resetPenomoran === 'tidak_pernah' ? 'selected' : ''}>Tidak Pernah Reset (Akumulatif)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid-cols-2">
+                <div class="form-group">
+                  <label class="form-label" for="sertakan_kode_kabupaten">Sertakan Kode Kabupaten?</label>
+                  <select id="sertakan_kode_kabupaten" name="sertakan_kode_kabupaten" class="form-control" onchange="document.getElementById('group_kode_kabupaten').style.display = this.value === '1' ? 'block' : 'none';">
+                    <option value="0" ${!sertakanKabupaten ? 'selected' : ''}>Nonaktif (Baku Nomor Rayon PMII)</option>
+                    <option value="1" ${sertakanKabupaten ? 'selected' : ''}>Aktifkan Kode Kabupaten</option>
+                  </select>
+                  <div class="form-hint">Pada nomor surat rayon asli, kode kabupaten tidak dicantumkan.</div>
+                </div>
+
+                <div class="form-group" id="group_kode_kabupaten" style="display: ${sertakanKabupaten ? 'block' : 'none'};">
+                  <label class="form-label" for="kode_kabupaten">Kode Kabupaten</label>
+                  <input type="text" id="kode_kabupaten" name="kode_kabupaten" class="form-control" value="${kodeKabupaten}" placeholder="Contoh: 8">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="format_nomor_surat">Pola Formula Nomor Surat</label>
+                <input type="text" id="format_nomor_surat" name="format_nomor_surat" class="form-control" value="${formatNomor}">
+                <div class="form-hint">
+                  Standar PPTA: <code>{no_total}.{panitia}{rayon}.{wilayah}.{kabupaten}{jenis}.{no_jenis}.{ttd}.{bulan}.{tahun}</code><br>
+                  Hasil: <code>023.PR-IV.V-02.01.023.A-I.10.2026</code>
                 </div>
               </div>
             </div>

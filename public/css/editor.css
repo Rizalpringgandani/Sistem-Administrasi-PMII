@@ -179,7 +179,8 @@
 }
 
 /* ==========================================================================
-   LEMBAR KERTAS F4 (215 x 330 mm)
+   LEMBAR KERTAS F4 (215mm x 330mm / 21 x 33 cm)
+   Sesuai Standar F4 & Pedoman Surat Resmi PMII (Margin 2 cm sekeliling)
    ========================================================================== */
 
 .editor-f4-paper {
@@ -188,7 +189,7 @@
   background-color: #ffffff;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
   margin: 0 auto;
-  padding: 25mm 25mm 25mm 25mm; /* Standar margin 2.5cm keliling */
+  padding: 20mm 20mm 20mm 20mm; /* Standar margin 2 cm sekeliling */
   box-sizing: border-box;
   color: #1e293b;
   font-family: "Times New Roman", Times, Georgia, serif;
@@ -215,7 +216,7 @@
 /* Konten TipTap di Dalam Lembar F4 */
 .ProseMirror {
   outline: none;
-  min-height: calc(330mm - 50mm);
+  min-height: calc(330mm - 40mm);
   cursor: text;
 }
 
@@ -259,20 +260,42 @@
   margin-bottom: 0.25em;
 }
 
+/* Garis Pemisah / Pindah Halaman TipTap */
+.ProseMirror hr {
+  border: none;
+  border-top: 1px dashed #94a3b8;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.ProseMirror hr::after {
+  content: '--- BATAS PINDAH HALAMAN (LAMPIRAN) ---';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  padding: 0 8px;
+  font-size: 0.65rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #64748b;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
 /* Tabel di dalam TipTap */
 .ProseMirror table {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
-  margin: 1em 0;
+  margin: 0.75em 0;
   overflow: hidden;
 }
 
 .ProseMirror td,
 .ProseMirror th {
   min-width: 1em;
-  border: 1px solid #1e293b;
-  padding: 6px 10px;
+  padding: 5px 8px;
   vertical-align: top;
   box-sizing: border-box;
   position: relative;
@@ -280,10 +303,22 @@
   font-size: 11pt;
 }
 
+/* Tabel data berkepala (seperti susunan acara lampiran): border hitam utuh, header kuning #FEF08A */
 .ProseMirror th {
   font-weight: bold;
-  text-align: left;
-  background-color: #f8fafc;
+  text-align: center;
+  background-color: #FEF08A !important;
+  color: #000000;
+  border: 1px solid #000000;
+}
+
+.ProseMirror table:has(th) td {
+  border: 1px solid #000000;
+}
+
+/* Tabel tata letak tanpa header (seperti rincian acara atau tanda tangan): borderless */
+.ProseMirror table:not(:has(th)) td {
+  border: none;
 }
 
 .ProseMirror .selectedCell:after {
@@ -339,14 +374,14 @@
 }
 
 /* ==========================================================================
-   CSS CETAK KHUSUS KERTAS F4 (215 x 330 mm)
+   CSS CETAK KHUSUS KERTAS F4 (21 x 33 cm / 210 x 330 mm)
    Tampilan Cetak / PDF Bersih Tanpa Elemen Antarmuka Web
    ========================================================================== */
 
 @media print {
   @page {
     size: 215mm 330mm;
-    margin: 0; /* Margin fisik diatur oleh padding F4 paper */
+    margin: 0; /* Margin fisik diatur oleh padding F4 paper (2 cm) */
   }
 
   body, html {
@@ -389,10 +424,19 @@
     width: 215mm !important;
     min-height: 330mm !important;
     margin: 0 auto !important;
-    padding: 25mm 25mm 25mm 25mm !important;
+    padding: 20mm 20mm 20mm 20mm !important; /* Margin 2 cm */
     box-shadow: none !important;
     border: none !important;
-    page-break-after: always;
+  }
+
+  /* Pindah Halaman Cetak pada HR */
+  .ProseMirror hr {
+    border: none !important;
+    page-break-after: always !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .ProseMirror {

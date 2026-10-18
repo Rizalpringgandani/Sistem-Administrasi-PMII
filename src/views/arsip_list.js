@@ -34,7 +34,9 @@ function renderArsipListPage({ dokumenList = [], searchQuery = '', selectedJenis
           <td>
             <div style="font-weight: 700; color: var(--text-main); font-family: monospace; font-size: 0.875rem;">
               ${escapeHtml(doc.nomor_dokumen || '-')}
+              ${doc.sifat_surat ? `<span style="font-size: 0.68rem; background: ${doc.sifat_surat === '01' ? '#dcfce7; color: #166534' : '#fee2e2; color: #991b1b'}; padding: 1px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">${doc.sifat_surat === '01' ? 'Internal' : 'Eksternal'}</span>` : ''}
             </div>
+            ${doc.no_urut_total ? `<div style="font-size: 0.72rem; color: #64748b; margin-top: 2px;">No. Total: #${String(doc.no_urut_total).padStart(3, '0')} ${doc.no_urut_jenis ? `&bull; No. Jenis: #${String(doc.no_urut_jenis).padStart(3, '0')}` : ''} ${doc.kode_penandatangan ? `&bull; [${escapeHtml(doc.kode_penandatangan)}]` : ''}</div>` : ''}
           </td>
           <td style="white-space: nowrap; font-size: 0.825rem; color: #475569;">
             ${escapeHtml(doc.tanggal_dokumen || '-')}

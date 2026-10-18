@@ -130,7 +130,7 @@ function inisialisasiDatabase() {
     );
   `);
 
-  // Migrasi aman untuk kolom konten_json pada template dan dokumen
+  // Migrasi aman untuk kolom konten_json dan kolom terpisah penomoran pada template dan dokumen
   const templateCols = db.prepare('PRAGMA table_info(template)').all().map(c => c.name);
   if (!templateCols.includes('konten_json')) {
     db.exec('ALTER TABLE template ADD COLUMN konten_json TEXT;');
@@ -139,6 +139,27 @@ function inisialisasiDatabase() {
   const dokumenCols = db.prepare('PRAGMA table_info(dokumen)').all().map(c => c.name);
   if (!dokumenCols.includes('konten_json')) {
     db.exec('ALTER TABLE dokumen ADD COLUMN konten_json TEXT;');
+  }
+  if (!dokumenCols.includes('no_urut_total')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN no_urut_total INTEGER;');
+  }
+  if (!dokumenCols.includes('no_urut_jenis')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN no_urut_jenis INTEGER;');
+  }
+  if (!dokumenCols.includes('sifat_surat')) {
+    db.exec("ALTER TABLE dokumen ADD COLUMN sifat_surat TEXT DEFAULT '01';");
+  }
+  if (!dokumenCols.includes('kode_penandatangan')) {
+    db.exec("ALTER TABLE dokumen ADD COLUMN kode_penandatangan TEXT DEFAULT 'A-I';");
+  }
+  if (!dokumenCols.includes('nama_panitia')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN nama_panitia TEXT;');
+  }
+  if (!dokumenCols.includes('bulan_surat')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN bulan_surat TEXT;');
+  }
+  if (!dokumenCols.includes('tahun_surat')) {
+    db.exec('ALTER TABLE dokumen ADD COLUMN tahun_surat INTEGER;');
   }
 
   seedingDataAwal();
@@ -156,19 +177,29 @@ function seedingDataAwal() {
     setPengaturan('admin_password', hash);
   }
 
-  // 2. Pengaturan Default Rayon
+  // 2. Pengaturan Default Rayon Sesuai Pedoman Surat Resmi PMII
   const defaultPengaturan = {
-    'nama_rayon': 'Rayon Pancasila',
-    'nama_komisariat': 'Komisariat Raden Rahmat',
-    'nama_cabang': 'PC PMII Kota',
-    'kampus': 'Universitas Islam Nusantara',
-    'alamat_sekretariat': 'Jl. Pergerakan No. 1960',
-    'email_rayon': 'rayon.pmii@email.local',
-    'telepon_rayon': '081234567890',
-    'kode_rayon': 'PR-PMII',
+    'nama_rayon': 'Rayon Fakultas Ekonomi Dan Bisnis',
+    'kop_tingkat': 'PENGURUS RAYON',
+    'kop_lembaga': 'PERGERAKAN MAHASISWA ISLAM INDONESIA',
+    'kop_inggris': '(Rayon Board Of Indonesian Moslem Student Movement)',
+    'nama_fakultas': 'FAKULTAS EKONOMI DAN BISNIS',
+    'nama_komisariat': 'Komisariat Universitas Pelita Bangsa',
+    'nama_komisariat_univ': 'KOMISARIAT UNIVERSITAS PELITA BANGSA',
+    'nama_cabang': 'PC PMII Kab. Bekasi',
+    'kampus': 'Universitas Pelita Bangsa',
+    'alamat_sekretariat': 'Jl. Kp. Tegal Danas No.42, RT.1/RW.1, Jayamukti, Cikarang Pusat, Bekasi',
+    'telepon_rayon': '087844241717, 081398946634',
+    'email_rayon': 'rayonfebupb@gmail.com',
+    'kode_wilayah': 'V-02',
+    'kode_rayon': 'PR-IV',
+    'motto_kop': 'Dzikir, Fikir, Amal Sholeh',
+    'sertakan_kode_kabupaten': '0',
+    'kode_kabupaten': '',
+    'reset_penomoran': 'tahunan', // 'tahunan', 'periode', 'tidak_pernah'
     'logo_rayon': '',
-    'logo_pmii': '/img/pmii-logo.svg',
-    'format_nomor_surat': '{no}/{kd}/{rayon}/PMII/{romawi}/{tahun}'
+    'logo_pmii': '/img/pmii-logo.png',
+    'format_nomor_surat': '{no_total}.{panitia}{rayon}.{wilayah}.{kabupaten}{jenis}.{no_jenis}.{ttd}.{bulan}.{tahun}'
   };
 
   for (const [kunci, nilai] of Object.entries(defaultPengaturan)) {
@@ -208,15 +239,257 @@ function seedingDataAwal() {
     );
   }
 
-  // 5. Template Surat Resmi Bawaan PMII
-  const countTemplate = db.prepare('SELECT COUNT(*) as count FROM template').get();
-  if (countTemplate.count === 0) {
-    const insertTemplate = db.prepare(`
-      INSERT INTO template (kode, judul, jenis, kategori, konten_html, konten_json, variabel_daftar, is_bawaan)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    `);
+  // 5. Template Surat Resmi Bawaan PMII (Diadaptasi dari Pedoman Surat & Contoh Asli Rayon)
+  const insertTemplate = db.prepare(`
+    INSERT INTO template (kode, judul, jenis, kategori, konten_html, konten_json, variabel_daftar, is_bawaan)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+  `);
+  const checkTemplate = db.prepare('SELECT id FROM template WHERE kode = ?');
 
-    // Template 1: Surat Undangan
+  // Template 0: Surat Pemberitahuan RTAR Ke-V dengan Lampiran Susunan Acara (Contoh Asli Rayon)
+  if (!checkTemplate.get('TPL-PEMBERITAHUAN-01')) {
+    const tplPemberitahuanJson = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'No.\t: ' },
+            { type: 'text', text: '{{nomor_surat}}' },
+            { type: 'text', text: '\nLamp.\t: {{lampiran}}\nHal.\t: ' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{perihal}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Kepada Yth,\n' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{tujuan}}\n' },
+            { type: 'text', text: 'Di –\nTempat' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: "Assalamu’alaikum Warahmatullahi Wabarakatuh" }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Salam silaturrahim teriring do’a kami sampaikan semoga Sahabat senantiasa berada dalam lindungan-Nya serta dimudahkan dalam menjalankan aktifitas keseharian. Aamiin." }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: "Sehubungan akan diselenggarakannya " },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nama_kegiatan}}' },
+            { type: 'text', text: ' oleh Pengurus Rayon Pergerakan Mahasiswa Islam Indonesia Fakultas Ekonomi dan Bisnis Universitas Pelita Bangsa, yang insyaallah akan dilaksanakan pada:' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hari/Tanggal' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: ': {{hari_tanggal}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Waktu' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: ': {{waktu}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tempat' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: ': {{tempat}}' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tema' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: ': "{{tema}}"' }] }] }
+              ]
+            }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: 'Oleh karena itu, kami selaku Pengurus Rayon Pergerakan Mahasiswa Islam Indonesia Fakultas Ekonomi dan Bisnis Universitas Pelita Bangsa, bermaksud memberitahukan kegiatan demi suksesnya acara tersebut.' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'justify' },
+          content: [
+            { type: 'text', text: 'Demikian surat pemberitahuan ini kami buat. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }, { type: 'bold' }], text: 'Wallahul Muwaffieq Ilaa Aqwamith Tharieq,\nWassalamu’alaikum Warahmatullahi Wabarakatuh.' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: '{{tempat_surat}}, {{tanggal_surat}}' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', text: 'Mengetahui,\n' },
+            { type: 'text', marks: [{ type: 'bold' }], text: 'PENGURUS RAYON\nPERGERAKAN MAHASISWA ISLAM INDONESIA\nFAKULTAS EKONOMI DAN BISNIS\nKOMISARIAT UNIVERSITAS PELITA BANGSA' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'left' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_ketua}}' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'left' }, content: [{ type: 'text', text: 'Ketua' }] }
+                  ]
+                },
+                {
+                  type: 'tableCell',
+                  content: [
+                    { type: 'paragraph', attrs: { textAlign: 'left' }, content: [{ type: 'text', marks: [{ type: 'bold' }, { type: 'underline' }], text: '{{nama_sekretaris}}' }] },
+                    { type: 'paragraph', attrs: { textAlign: 'left' }, content: [{ type: 'text', text: 'Sekretaris' }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          type: 'horizontalRule'
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'left' },
+          content: [
+            { type: 'text', marks: [{ type: 'italic' }], text: 'Lampiran I' }
+          ]
+        },
+        {
+          type: 'paragraph',
+          attrs: { textAlign: 'center' },
+          content: [
+            { type: 'text', marks: [{ type: 'bold' }], text: 'SUSUNAN ACARA\n' },
+            { type: 'text', marks: [{ type: 'bold' }], text: '{{nama_kegiatan}}' }
+          ]
+        },
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableHeader', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hari/Tanggal' }] }] },
+                { type: 'tableHeader', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Waktu' }] }] },
+                { type: 'tableHeader', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Acara' }] }] },
+                { type: 'tableHeader', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Penanggung Jawab' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sabtu, 24 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '09.00 – 10.00' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Registrasi' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Panitia' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sabtu, 24 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '10.00 – 10.15' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Pembukaan' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'MC' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sabtu, 24 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '10.15 – 10.30' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Pembacaan Ayat Suci Al-Qur’an' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Dirigen : Aribah Fadiah' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sabtu, 24 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '10.30 – 11.00' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Menyanyikan Lagu:\nIndonesia Raya\nMars PMII\nSubbanul Wathon' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ALL' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sabtu, 24 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '11.00 – 12.45' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sambutan – Sambutan' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ketua Panitia & Pengurus' }] }] }
+              ]
+            },
+            {
+              type: 'tableRow',
+              content: [
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Minggu, 25 Oktober 2026' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: '02.00 – 02.30' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'PENUTUPAN' }] }] },
+                { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ALL' }] }] }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const varsPemberitahuan = ['nomor_surat', 'lampiran', 'perihal', 'tujuan', 'nama_kegiatan', 'hari_tanggal', 'waktu', 'tempat', 'tema', 'tempat_surat', 'tanggal_surat', 'nama_ketua', 'nama_sekretaris'];
+
+    insertTemplate.run(
+      'TPL-PEMBERITAHUAN-01',
+      'Surat Pemberitahuan Kegiatan & Lampiran Acara',
+      'surat_keluar',
+      'Pemberitahuan',
+      '',
+      JSON.stringify(tplPemberitahuanJson),
+      JSON.stringify(varsPemberitahuan)
+    );
+  }
+
+  // Template 1: Surat Undangan
+  if (!checkTemplate.get('TPL-UND-01')) {
     const tplUndanganJson = {
       type: 'doc',
       content: [
@@ -549,39 +822,113 @@ function toAngkaRomawi(bulanIndex) {
 }
 
 /**
- * Usulkan nomor surat otomatis sesuai format di pengaturan dan nomor urut tahun ini
+ * Usulkan nomor surat resmi PMII sesuai Pedoman Penyelenggaraan Tertib Administrasi (PPTA):
+ * Format Rayon: [No_Total].[Panitia].[Tingkat_Periode].[Wilayah].[Jenis].[No_Jenis].[Kode_Ttd].[Bulan].[Tahun]
+ * Contoh Rayon: 023.PR-IV.V-02.01.023.A-I.10.2026
+ * Dua penghitung terpisah:
+ *  1. no_urut_total (semua surat keluar internal dan eksternal digabung)
+ *  2. no_urut_jenis (nomor urut khusus internal 01 atau eksternal 02)
  */
-function generateNomorSurat(kodeKategori = '01') {
-  const format = getPengaturan('format_nomor_surat', '{no}/{kd}/{rayon}/PMII/{romawi}/{tahun}');
-  const now = new Date();
-  const tahunSekarang = String(now.getFullYear());
-  const bulanRomawi = toAngkaRomawi(now.getMonth());
-  const kodeRayon = getPengaturan('kode_rayon', 'PR-PMII');
+function generateNomorSuratPedoman({
+  sifatSurat = '01', // '01' = internal, '02' = eksternal
+  kodePenandatangan = 'A-I',
+  namaPanitia = '',
+  tanggal = null
+} = {}) {
+  const format = getPengaturan(
+    'format_nomor_surat',
+    '{no_total}.{panitia}{rayon}.{wilayah}.{kabupaten}{jenis}.{no_jenis}.{ttd}.{bulan}.{tahun}'
+  );
 
-  // Hitung jumlah surat keluar yang terdaftar pada tahun berjalan
-  const row = db.prepare(`
-    SELECT COUNT(*) as total 
+  const dateObj = tanggal ? new Date(tanggal) : new Date();
+  const tahunSekarang = dateObj.getFullYear();
+  const bulanDigit = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const kodeRayon = getPengaturan('kode_rayon', 'PR-IV');
+  const kodeWilayah = getPengaturan('kode_wilayah', 'V-02');
+  const sertakanKab = getPengaturan('sertakan_kode_kabupaten', '0') === '1';
+  const kodeKab = sertakanKab ? (getPengaturan('kode_kabupaten', '') ? getPengaturan('kode_kabupaten') + '.' : '') : '';
+  const resetMode = getPengaturan('reset_penomoran', 'tahunan');
+
+  let filterWaktuTotal = '';
+  let filterWaktuJenis = '';
+  let paramsTotal = [];
+  let paramsJenis = [sifatSurat];
+
+  if (resetMode === 'tahunan') {
+    filterWaktuTotal = ` AND (strftime('%Y', created_at) = ? OR tanggal_dokumen LIKE ? OR tahun_surat = ?) `;
+    paramsTotal.push(String(tahunSekarang), `%${tahunSekarang}%`, tahunSekarang);
+    filterWaktuJenis = ` AND (strftime('%Y', created_at) = ? OR tanggal_dokumen LIKE ? OR tahun_surat = ?) `;
+    paramsJenis.push(String(tahunSekarang), `%${tahunSekarang}%`, tahunSekarang);
+  } else if (resetMode === 'periode') {
+    const activePeriode = db.prepare('SELECT tahun_mulai, tahun_selesai FROM periode WHERE status_aktif = 1 LIMIT 1').get();
+    if (activePeriode) {
+      filterWaktuTotal = ` AND tahun_surat >= ? AND tahun_surat <= ? `;
+      paramsTotal.push(activePeriode.tahun_mulai, activePeriode.tahun_selesai);
+      filterWaktuJenis = ` AND tahun_surat >= ? AND tahun_surat <= ? `;
+      paramsJenis.push(activePeriode.tahun_mulai, activePeriode.tahun_selesai);
+    }
+  }
+
+  // 1. Hitung No Urut Total (seluruh surat keluar)
+  const rowTotal = db.prepare(`
+    SELECT MAX(no_urut_total) as max_total, COUNT(*) as count_total 
     FROM dokumen 
-    WHERE jenis = 'surat_keluar' 
-    AND (strftime('%Y', created_at) = ? OR tanggal_dokumen LIKE ?)
-  `).get(tahunSekarang, `%${tahunSekarang}%`);
+    WHERE jenis = 'surat_keluar' ${filterWaktuTotal}
+  `).get(...paramsTotal);
 
-  const urut = (row ? row.total : 0) + 1;
-  const noFormatted = String(urut).padStart(3, '0');
+  const urutTotal = Math.max(rowTotal?.max_total || 0, rowTotal?.count_total || 0) + 1;
+  const noTotalFormatted = String(urutTotal).padStart(3, '0');
 
-  const nomor = format
-    .replace('{no}', noFormatted)
-    .replace('{kd}', kodeKategori)
+  // 2. Hitung No Urut Jenis (hanya jenis yang sama: 01 atau 02)
+  const rowJenis = db.prepare(`
+    SELECT MAX(no_urut_jenis) as max_jenis, COUNT(*) as count_jenis 
+    FROM dokumen 
+    WHERE jenis = 'surat_keluar' AND (sifat_surat = ? OR sifat_surat IS NULL) ${filterWaktuJenis}
+  `).get(...paramsJenis);
+
+  const urutJenis = Math.max(rowJenis?.max_jenis || 0, rowJenis?.count_jenis || 0) + 1;
+  const noJenisFormatted = String(urutJenis).padStart(3, '0');
+
+  const panitiaStr = namaPanitia && namaPanitia.trim() ? `${namaPanitia.trim()}.` : '';
+
+  let nomor = format
+    .replace('{no_total}', noTotalFormatted)
+    .replace('{panitia}', panitiaStr)
     .replace('{rayon}', kodeRayon)
-    .replace('{romawi}', bulanRomawi)
-    .replace('{tahun}', tahunSekarang);
+    .replace('{wilayah}', kodeWilayah)
+    .replace('{kabupaten}', kodeKab)
+    .replace('{jenis}', sifatSurat)
+    .replace('{no_jenis}', noJenisFormatted)
+    .replace('{ttd}', kodePenandatangan)
+    .replace('{bulan}', bulanDigit)
+    .replace('{tahun}', String(tahunSekarang));
+
+  // Fallback jika format lama masih terpakai di pengaturan
+  if (nomor.includes('{no}') || nomor.includes('{romawi}')) {
+    nomor = `${noTotalFormatted}.${panitiaStr}${kodeRayon}.${kodeWilayah}.${kodeKab}${sifatSurat}.${noJenisFormatted}.${kodePenandatangan}.${bulanDigit}.${tahunSekarang}`;
+  }
 
   return {
     nomor,
-    urut,
-    tahun: tahunSekarang,
+    no_urut_total: urutTotal,
+    no_urut_jenis: urutJenis,
+    sifat_surat: sifatSurat,
+    kode_penandatangan: kodePenandatangan,
+    nama_panitia: namaPanitia,
+    bulan_surat: bulanDigit,
+    tahun_surat: tahunSekarang,
+    tahun: String(tahunSekarang),
+    urut: urutTotal,
     format
   };
+}
+
+/**
+ * Usulkan nomor surat otomatis - Wrapper kompatibilitas
+ */
+function generateNomorSurat(kodeKategori = '01') {
+  const sifatSurat = kodeKategori === '02' ? '02' : '01';
+  return generateNomorSuratPedoman({ sifatSurat });
 }
 
 /**
@@ -643,6 +990,7 @@ module.exports = {
   setMultiplePengaturan,
   toAngkaRomawi,
   generateNomorSurat,
+  generateNomorSuratPedoman,
   extractVariablesFromTipTap,
   replaceVariablesInTipTapJson
 };

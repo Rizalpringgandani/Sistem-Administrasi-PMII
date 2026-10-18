@@ -4,6 +4,7 @@ const { db, getAllPengaturan } = require('../database/db');
 const { requireAuth } = require('../middleware/auth');
 const { renderLayout, escapeHtml } = require('../views/layout');
 const { renderArsipListPage } = require('../views/arsip_list');
+const { renderKopSuratHtml, renderFooterHtml } = require('../views/kop_surat');
 const { generateDocxFromTipTap } = require('../services/docxGenerator');
 
 /**
@@ -136,7 +137,7 @@ router.get('/dokumen/:id/cetak', requireAuth, (req, res) => {
 </head>
 <body>
   <div class="print-btn-bar" style="background: #003366; color: #fff; padding: 0.5rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-    <div><strong>Pratinjau Cetak Kertas F4 (215 x 330 mm)</strong> - ${escapeHtml(doc.nomor_dokumen || '')}</div>
+    <div><strong>Pratinjau Cetak Kertas F4 (21 x 33 cm)</strong> - ${escapeHtml(doc.nomor_dokumen || '')}</div>
     <div style="display: flex; gap: 0.5rem;">
       <button onclick="window.print()" style="background: #ffd700; color: #002e56; font-weight: bold; border: none; padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer;">
         Cetak Sekarang / Simpan PDF
@@ -149,21 +150,13 @@ router.get('/dokumen/:id/cetak', requireAuth, (req, res) => {
 
   <div class="editor-workspace-desk" style="background: transparent; padding: 0;">
     <div class="editor-f4-paper">
-      <!-- Kop Surat PMII Otomatis -->
-      <div class="kop-surat-header" style="border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-        <div style="width: 75px; text-align: center; flex-shrink: 0;">
-          <img src="${logoSrc}" alt="Logo PMII" style="max-width: 70px; max-height: 85px; object-fit: contain;">
-        </div>
-        <div style="flex: 1; text-align: center; font-family: 'Times New Roman', Times, serif; color: #000000;">
-          <div style="font-size: 13pt; font-weight: bold; letter-spacing: 0.5px;">PENGURUS RAYON</div>
-          <div style="font-size: 15pt; font-weight: bold; color: #003366; letter-spacing: 0.5px;">PERGERAKAN MAHASISWA ISLAM INDONESIA</div>
-          <div style="font-size: 9.5pt; font-style: italic; color: #d99b00; margin-top: -2px;">(Indonesian Muslim Student Movement)</div>
-          <div style="font-size: 12pt; font-weight: bold; margin-top: 2px;">${namaRayon} ${namaKomisariat} ${namaCabang}</div>
-          <div style="font-size: 8.5pt; margin-top: 4px;">Sekretariat: ${alamat}</div>
-        </div>
-      </div>
+      <!-- Kop Surat PMII Otomatis Sesuai Pedoman Surat -->
+      ${renderKopSuratHtml(settings)}
 
       <div id="tiptap-print-render"></div>
+
+      <!-- Footer Motto PMII -->
+      ${renderFooterHtml(settings)}
     </div>
   </div>
 

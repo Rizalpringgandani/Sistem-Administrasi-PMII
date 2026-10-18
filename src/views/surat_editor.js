@@ -3,6 +3,7 @@
  */
 
 const { escapeHtml } = require('./layout');
+const { renderKopSuratHtml, renderFooterHtml } = require('./kop_surat');
 
 function renderSuratEditorPage({ docData = {}, settings = {} }) {
   const dokumenId = docData.id || '';
@@ -13,13 +14,6 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
   const perihal = escapeHtml(docData.perihal || '');
   const templateId = docData.template_id || '';
   const initialJsonStr = docData.konten_json ? JSON.stringify(docData.konten_json) : '';
-
-  // Kop Surat Text
-  const namaRayon = (settings.nama_rayon || 'RAYON PMII').toUpperCase();
-  const namaKomisariat = (settings.nama_komisariat || '').toUpperCase();
-  const namaCabang = (settings.nama_cabang || '').toUpperCase();
-  const alamat = escapeHtml(settings.alamat_sekretariat || 'Alamat Sekretariat');
-  const logoSrc = settings.logo_rayon || settings.logo_pmii || '/img/pmii-logo.svg';
 
   return `
     <link rel="stylesheet" href="/css/editor.css">
@@ -33,6 +27,13 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
     <input type="hidden" id="doc-tujuan" value="${tujuan}">
     <input type="hidden" id="doc-perihal" value="${perihal}">
     <input type="hidden" id="doc-tanggal" value="${tanggalDokumen}">
+    <input type="hidden" id="doc-no-urut-total" value="${docData.no_urut_total || ''}">
+    <input type="hidden" id="doc-no-urut-jenis" value="${docData.no_urut_jenis || ''}">
+    <input type="hidden" id="doc-sifat-surat" value="${docData.sifat_surat || '01'}">
+    <input type="hidden" id="doc-kode-penandatangan" value="${docData.kode_penandatangan || 'A-I'}">
+    <input type="hidden" id="doc-nama-panitia" value="${escapeHtml(docData.nama_panitia || '')}">
+    <input type="hidden" id="doc-bulan-surat" value="${docData.bulan_surat || ''}">
+    <input type="hidden" id="doc-tahun-surat" value="${docData.tahun_surat || ''}">
 
     <!-- Toolbar Editor -->
     <div class="editor-toolbar-container">
@@ -201,24 +202,16 @@ function renderSuratEditorPage({ docData = {}, settings = {} }) {
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
       <div class="editor-f4-paper" id="f4-paper-container">
-        <span class="paper-meta-badge">Surat Resmi F4 &bull; 215 &times; 330 mm</span>
+        <span class="paper-meta-badge">Surat Resmi F4 &bull; 210 &times; 330 mm</span>
 
-        <!-- Kop Surat PMII Otomatis -->
-        <div class="kop-surat-header" style="border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-          <div style="width: 75px; text-align: center; flex-shrink: 0;">
-            <img src="${logoSrc}" alt="Logo PMII" style="max-width: 70px; max-height: 85px; object-fit: contain;">
-          </div>
-          <div style="flex: 1; text-align: center; font-family: 'Times New Roman', Times, serif; color: #000000;">
-            <div style="font-size: 13pt; font-weight: bold; letter-spacing: 0.5px;">PENGURUS RAYON</div>
-            <div style="font-size: 15pt; font-weight: bold; color: #003366; letter-spacing: 0.5px;">PERGERAKAN MAHASISWA ISLAM INDONESIA</div>
-            <div style="font-size: 9.5pt; font-style: italic; color: #d99b00; margin-top: -2px;">(Indonesian Muslim Student Movement)</div>
-            <div style="font-size: 12pt; font-weight: bold; margin-top: 2px;">${namaRayon} ${namaKomisariat} ${namaCabang}</div>
-            <div style="font-size: 8.5pt; margin-top: 4px;">Sekretariat: ${alamat}</div>
-          </div>
-        </div>
+        <!-- Kop Surat PMII Otomatis Sesuai Pedoman Surat Resmi -->
+        ${renderKopSuratHtml(settings)}
 
         <!-- Sasaran Konten TipTap Surat -->
         <div id="tiptap-surat-editor"></div>
+
+        <!-- Footer Halaman Motto PMII Resmi -->
+        ${renderFooterHtml(settings)}
       </div>
     </div>
 
