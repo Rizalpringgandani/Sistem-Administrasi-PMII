@@ -136,6 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Pisah Halaman / Lampiran (Page Break)
+  const btnPageBreak = document.getElementById('btn-insert-pagebreak');
+  if (btnPageBreak) {
+    btnPageBreak.onclick = () => editor.chain().focus().setHorizontalRule().run();
+  }
+
   // Find & Replace
   const panelFindReplace = document.getElementById('find-replace-panel');
   const btnToggleFindReplace = document.getElementById('btn-toggle-find-replace');

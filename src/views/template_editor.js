@@ -70,14 +70,18 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{lampiran}}">+ {{lampiran}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{perihal}}">+ {{perihal}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tanggal_surat}}">+ {{tanggal_surat}}</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tempat_surat}}">+ {{tempat_surat}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tujuan}}">+ {{tujuan}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tempat_tujuan}}">+ {{tempat_tujuan}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{nama_kegiatan}}">+ {{nama_kegiatan}}</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tema}}">+ {{tema}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{hari_tanggal}}">+ {{hari_tanggal}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{waktu}}">+ {{waktu}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{tempat}}">+ {{tempat}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{nama_ketua}}">+ {{nama_ketua}}</button>
         <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{nama_sekretaris}}">+ {{nama_sekretaris}}</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{nama_ketua_panitia}}">+ {{nama_ketua_panitia}}</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-tag" data-tag="{{nama_sekretaris_panitia}}">+ {{nama_sekretaris_panitia}}</button>
       </div>
     </div>
 
@@ -171,13 +175,17 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
         <button type="button" class="tb-btn" id="btn-insert-image" title="Sisipkan Gambar">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
         </button>
+
+        <button type="button" class="tb-btn" id="btn-insert-pagebreak" title="Pisah Halaman / Lampiran (Page Break)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M4 6h16M4 18h16"></path></svg>
+        </button>
       </div>
     </div>
 
     <!-- Kanvas Kerja F4 -->
     <div class="editor-workspace-desk">
       <div class="editor-f4-paper" id="f4-paper-container">
-        <span class="paper-meta-badge">Template Surat F4 &bull; 210 &times; 330 mm</span>
+        <span class="paper-meta-badge">Template Surat F4 &bull; 215 &times; 330 mm</span>
 
         <!-- Tampilan Otomatis Kop Surat PMII Sesuai Pedoman Surat -->
         ${renderKopSuratHtml(settings)}
@@ -332,6 +340,12 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
         document.getElementById('btn-add-col').onclick = () => editor.chain().focus().addColumnAfter().run();
         document.getElementById('btn-delete-col').onclick = () => editor.chain().focus().deleteColumn().run();
         document.getElementById('btn-delete-table').onclick = () => editor.chain().focus().deleteTable().run();
+
+        // Pisah Halaman / Lampiran (Page Break)
+        const btnPageBreak = document.getElementById('btn-insert-pagebreak');
+        if (btnPageBreak) {
+          btnPageBreak.onclick = () => editor.chain().focus().setHorizontalRule().run();
+        }
 
         // Tombol sisipkan tag variabel
         document.querySelectorAll('.btn-insert-tag').forEach(btn => {
