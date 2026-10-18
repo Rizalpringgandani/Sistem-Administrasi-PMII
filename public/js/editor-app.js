@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     TextColor,
     Indent,
     TabKey,
-    LineHeight
+    LineHeight,
+    ParagraphSpacing
   } = window.TipTap;
 
   // 1. Ambil data dokumen awal jika ada
@@ -135,7 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
       TextColor,
       Indent,
       TabKey,
-      LineHeight
+      LineHeight,
+      ParagraphSpacing
     ],
     content: initialContent,
     autofocus: 'end',
@@ -279,18 +281,42 @@ document.addEventListener('DOMContentLoaded', () => {
     btnOutdent.onclick = () => editor.chain().focus().outdent().run();
   }
 
-  // Jarak Spasi Baris (Diterapkan ke teks/paragraf yang dipilih)
+  // Jarak Spasi Baris & Hilangkan Space (Diterapkan ke teks/paragraf yang dipilih)
   const paperContainer = document.getElementById('f4-paper-container');
   const selectLineSpacing = document.getElementById('select-line-spacing');
+  const btnToggleNoSpacing = document.getElementById('btn-toggle-no-spacing');
+
+  if (btnToggleNoSpacing) {
+    btnToggleNoSpacing.onclick = () => {
+      if (editor && editor.commands && editor.commands.toggleNoSpacing) {
+        editor.chain().focus().toggleNoSpacing().run();
+      }
+    };
+  }
+
   if (selectLineSpacing && paperContainer) {
     selectLineSpacing.onchange = (e) => {
       const val = e.target.value;
-      if (editor && editor.commands && editor.commands.setLineHeight) {
-        editor.chain().focus().setLineHeight(val).run();
+      if (val === 'tight') {
+        if (editor && editor.commands && editor.commands.setNoSpacing) {
+          editor.chain().focus().setNoSpacing(true).run();
+        } else if (editor && editor.commands && editor.commands.setLineHeight) {
+          editor.chain().focus().setLineHeight('1.0').run();
+        }
+        paperContainer.style.setProperty('--paper-line-height', '1.0');
+        const pm = paperContainer.querySelector('.ProseMirror');
+        if (pm) pm.style.lineHeight = '1.0';
+      } else {
+        if (editor && editor.commands && editor.commands.setLineHeight) {
+          editor.chain().focus().setLineHeight(val).run();
+        }
+        if (editor && editor.commands && editor.commands.setNoSpacing) {
+          editor.chain().focus().setNoSpacing(false).run();
+        }
+        paperContainer.style.setProperty('--paper-line-height', val);
+        const pm = paperContainer.querySelector('.ProseMirror');
+        if (pm) pm.style.lineHeight = val;
       }
-      paperContainer.style.setProperty('--paper-line-height', val);
-      const pm = paperContainer.querySelector('.ProseMirror');
-      if (pm) pm.style.lineHeight = val;
     };
   }
 
@@ -654,17 +680,24 @@ document.addEventListener('DOMContentLoaded', () => {
     btnBulletList.classList.toggle('is-active', editor.isActive('bulletList'));
     btnOrderedList.classList.toggle('is-active', editor.isActive('orderedList'));
 
-    // Spasi Baris Paragraf Aktif
+    // Spasi Baris Paragraf Aktif & Hilangkan Space
     if (selectLineSpacing) {
       const { from, to } = editor.state.selection;
       let activeLineHeight = null;
+      let activeNoSpacing = false;
       editor.state.doc.nodesBetween(from, to, (node) => {
-        if (['paragraph', 'heading'].includes(node.type.name) && node.attrs.lineHeight) {
-          activeLineHeight = node.attrs.lineHeight;
+        if (['paragraph', 'heading'].includes(node.type.name)) {
+          if (node.attrs.noSpacing) activeNoSpacing = true;
+          if (node.attrs.lineHeight) activeLineHeight = node.attrs.lineHeight;
         }
       });
-      if (activeLineHeight) {
+      if (activeNoSpacing) {
+        selectLineSpacing.value = 'tight';
+      } else if (activeLineHeight) {
         selectLineSpacing.value = activeLineHeight;
+      }
+      if (btnToggleNoSpacing) {
+        btnToggleNoSpacing.classList.toggle('is-active', activeNoSpacing);
       }
     }
   }

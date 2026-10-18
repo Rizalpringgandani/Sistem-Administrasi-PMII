@@ -22,7 +22,8 @@ assert.ok(fs.existsSync(editorCssPath), 'Berkas public/css/editor.css harus ada'
 const cssContent = fs.readFileSync(editorCssPath, 'utf8');
 assert.ok(cssContent.includes('215mm') && cssContent.includes('330mm'), 'CSS harus memuat ukuran standar F4 (215 x 330 mm)');
 assert.ok(cssContent.includes('@media print'), 'CSS harus memuat aturan cetak @media print');
-console.log('✓ CSS lembar kerja F4 & aturan cetak terverifikasi.');
+assert.ok(cssContent.includes('no-spacing'), 'CSS harus memuat aturan hilangkan space (.no-spacing)');
+console.log('✓ CSS lembar kerja F4, aturan cetak, dan aturan hilangkan space terverifikasi.');
 
 const editorAppPath = path.join(__dirname, '../public/js/editor-app.js');
 assert.ok(fs.existsSync(editorAppPath), 'Berkas public/js/editor-app.js harus ada');
@@ -80,8 +81,10 @@ const server = app.listen(0, async () => {
     assert.ok(htmlEditor.includes('btn-print-doc'), 'Harus ada tombol Cetak F4');
     assert.ok(htmlEditor.includes('btn-save-doc'), 'Harus ada tombol Simpan Dokumen');
     assert.ok(htmlEditor.includes('find-replace-panel'), 'Harus ada panel Cari & Ganti');
+    assert.ok(htmlEditor.includes('btn-toggle-no-spacing'), 'Harus ada tombol toggle hilangkan space');
+    assert.ok(htmlEditor.includes('Hilangkan Space'), 'Harus ada opsi/menu Hilangkan Space');
     assert.ok(htmlEditor.includes('215 &times; 330 mm') || htmlEditor.includes('215 x 330 mm'), 'Harus ada indikator F4');
-    console.log('✓ Halaman editor dokumen F4 berhasil dimuat dengan komponen lengkap.');
+    console.log('✓ Halaman editor dokumen F4 berhasil dimuat dengan komponen lengkap dan fitur Hilangkan Space.');
 
     // 6. Test API Simpan TipTap JSON
     const testJson = {

@@ -150,14 +150,20 @@ function renderEditorPage({ settings = {}, savedDraft = null }) {
           </button>
         </div>
 
-        <!-- Spasi Baris -->
-        <div class="toolbar-group" title="Jarak Spasi Baris">
-          <select id="select-line-spacing" class="tb-select">
+        <!-- Spasi Baris & Hilangkan Space -->
+        <div class="toolbar-group" title="Jarak Spasi & Hilangkan Space">
+          <select id="select-line-spacing" class="tb-select" title="Pilih Jarak Spasi Baris">
             <option value="1.0">Spasi 1.0</option>
             <option value="1.15">Spasi 1.15</option>
             <option value="1.5" selected>Spasi 1.5</option>
             <option value="2.0">Spasi 2.0</option>
+            <option value="tight">Hilangkan Space (0 pt)</option>
           </select>
+          <button type="button" class="tb-btn" id="btn-toggle-no-spacing" title="Hilangkan Space Paragraf (Remove Space / 0 pt)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 17px; height: 17px;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 20h18M12 7v3m0 0l-2-2m2 2l2-2M12 17v-3m0 0l-2 2m2-2l2 2M4 12h16" />
+            </svg>
+          </button>
         </div>
 
         <!-- Atur Margin F4 -->

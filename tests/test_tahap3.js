@@ -81,6 +81,13 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
         content: [
           { type: 'text', text: 'Ini adalah paragraf pengujian dengan tabulasi:\tbagian teks setelah tab stop.' }
         ]
+      },
+      {
+        type: 'paragraph',
+        attrs: { textAlign: 'left', noSpacing: true },
+        content: [
+          { type: 'text', text: 'Perihal: Undangan Rapat (Hilangkan Spasi 0 pt)' }
+        ]
       }
     ]
   };
@@ -149,6 +156,8 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.ok(textTplBaru.includes('btn-color-pmii'), 'Toolbar template baru harus memuat tombol warna PMII');
       assert.ok(textTplBaru.includes('select-margin'), 'Toolbar template baru harus memuat atur margin');
       assert.ok(textTplBaru.includes('select-line-spacing'), 'Toolbar template baru harus memuat atur jarak spasi');
+      assert.ok(textTplBaru.includes('btn-toggle-no-spacing'), 'Toolbar template baru harus memuat tombol hilangkan space');
+      assert.ok(textTplBaru.includes('Hilangkan Space'), 'Toolbar template baru harus memuat opsi Hilangkan Space');
       assert.ok(textTplBaru.includes('btn-insert-tab'), 'Toolbar template baru harus memuat tombol tab');
       assert.ok(!textTplBaru.includes('Tuliskan isi surat template di sini dengan menandai'), 'Template baru tidak boleh lagi dipenuhi teks tiruan');
       console.log('✓ Halaman template baru kosong & toolbar lengkap terverifikasi.');
@@ -209,6 +218,8 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       assert.ok(htmlProses.includes('Sahabat Zaid'), 'Dokumen di editor harus memuat nilai variabel terisi');
       assert.ok(htmlProses.includes('doc-no-urut-total'), 'Editor harus memuat input hidden counter');
       assert.ok(htmlProses.includes('btn-color-pmii'), 'Editor surat harus memuat tombol warna PMII');
+      assert.ok(htmlProses.includes('btn-toggle-no-spacing'), 'Editor surat harus memuat tombol hilangkan space');
+      assert.ok(htmlProses.includes('Hilangkan Space'), 'Editor surat harus memuat opsi Hilangkan Space');
       console.log('✓ Proses substitusi template ke editor F4 terverifikasi.');
 
       // E. Test Simpan ke Arsip Dokumen dengan Kolom PPTA Terpisah, Margin & Line Spacing
@@ -269,6 +280,14 @@ console.log('✓ Ekstraksi dan substitusi variabel TipTap JSON terverifikasi.');
       const docxArrayBuf = await resExportWord.arrayBuffer();
       assert.ok(docxArrayBuf.byteLength > 10000, 'Ukuran file docx terunduh harus valid');
       console.log('✓ Unduh berkas Word (.docx) F4 dinamis terverifikasi:', (docxArrayBuf.byteLength / 1024).toFixed(1), 'KB.');
+
+      // Test Export Word dengan line_spacing=tight (Hilangkan Space)
+      const resExportTight = await fetch(`http://localhost:${port}/dokumen/${docId}/export-word?margin=20mm&line_spacing=tight`, { headers: { 'Cookie': cookieHeader } });
+      assert.strictEqual(resExportTight.status, 200);
+      assert.strictEqual(resExportTight.headers.get('content-type'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      const tightArrayBuf = await resExportTight.arrayBuffer();
+      assert.ok(tightArrayBuf.byteLength > 10000, 'Ukuran file docx tight spacing harus valid');
+      console.log('✓ Unduh berkas Word (.docx) F4 Hilangkan Space (tight 0 pt) terverifikasi.');
 
       // H. Test Cetak / PDF View
       const resCetak = await fetch(`http://localhost:${port}/dokumen/${docId}/cetak`, { headers: { 'Cookie': cookieHeader } });

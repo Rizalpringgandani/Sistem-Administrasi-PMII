@@ -218,6 +218,108 @@ export const LineHeight = Extension.create({
   }
 });
 
+/**
+ * Custom Extension: ParagraphSpacing
+ * Mengatur space / jarak antar paragraf (0 pt space / Hilangkan Space)
+ */
+export const ParagraphSpacing = Extension.create({
+  name: 'paragraphSpacing',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading'],
+        attributes: {
+          noSpacing: {
+            default: false,
+            parseHTML: element => {
+              return (
+                element.getAttribute('data-no-spacing') === 'true' ||
+                element.classList.contains('no-spacing') ||
+                element.style.marginBottom === '0px' ||
+                element.style.marginBottom === '0'
+              );
+            },
+            renderHTML: attributes => {
+              if (!attributes.noSpacing) return {};
+              return {
+                'data-no-spacing': 'true',
+                class: 'no-spacing'
+              };
+            }
+          }
+        }
+      }
+    ];
+  },
+  addCommands() {
+    return {
+      setNoSpacing: (enabled = true) => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        tr = tr.setSelection(selection);
+        let updated = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (['paragraph', 'heading'].includes(node.type.name)) {
+            const newAttrs = {
+              ...node.attrs,
+              noSpacing: Boolean(enabled)
+            };
+            if (enabled) {
+              newAttrs.lineHeight = '1.0';
+            }
+            tr = tr.setNodeMarkup(pos, undefined, newAttrs);
+            updated = true;
+          }
+        });
+        if (dispatch && updated) dispatch(tr);
+        return updated;
+      },
+      unsetNoSpacing: () => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        tr = tr.setSelection(selection);
+        let updated = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (['paragraph', 'heading'].includes(node.type.name)) {
+            tr = tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              noSpacing: false
+            });
+            updated = true;
+          }
+        });
+        if (dispatch && updated) dispatch(tr);
+        return updated;
+      },
+      toggleNoSpacing: () => ({ tr, state, dispatch }) => {
+        const { selection } = state;
+        tr = tr.setSelection(selection);
+        let hasNoSpacing = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node) => {
+          if (['paragraph', 'heading'].includes(node.type.name) && node.attrs.noSpacing) {
+            hasNoSpacing = true;
+          }
+        });
+        const targetState = !hasNoSpacing;
+        let updated = false;
+        state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (['paragraph', 'heading'].includes(node.type.name)) {
+            const newAttrs = {
+              ...node.attrs,
+              noSpacing: targetState
+            };
+            if (targetState) {
+              newAttrs.lineHeight = '1.0';
+            }
+            tr = tr.setNodeMarkup(pos, undefined, newAttrs);
+            updated = true;
+          }
+        });
+        if (dispatch && updated) dispatch(tr);
+        return updated;
+      }
+    };
+  }
+});
+
 window.TipTap = {
   Editor,
   StarterKit,
@@ -232,5 +334,7 @@ window.TipTap = {
   TextColor,
   Indent,
   TabKey,
-  LineHeight
+  LineHeight,
+  ParagraphSpacing
 };
+

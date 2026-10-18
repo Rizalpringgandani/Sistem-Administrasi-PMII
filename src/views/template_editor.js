@@ -204,14 +204,20 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           </button>
         </div>
 
-        <!-- Spasi Baris -->
-        <div class="toolbar-group" title="Jarak Spasi Baris">
-          <select id="select-line-spacing" class="tb-select">
+        <!-- Spasi Baris & Hilangkan Space -->
+        <div class="toolbar-group" title="Jarak Spasi & Hilangkan Space">
+          <select id="select-line-spacing" class="tb-select" title="Pilih Jarak Spasi Baris">
             <option value="1.0">Spasi 1.0</option>
             <option value="1.15">Spasi 1.15</option>
             <option value="1.5" selected>Spasi 1.5</option>
             <option value="2.0">Spasi 2.0</option>
+            <option value="tight">Hilangkan Space (0 pt)</option>
           </select>
+          <button type="button" class="tb-btn" id="btn-toggle-no-spacing" title="Hilangkan Space Paragraf (Remove Space / 0 pt)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 17px; height: 17px;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 20h18M12 7v3m0 0l-2-2m2 2l2-2M12 17v-3m0 0l-2 2m2-2l2 2M4 12h16" />
+            </svg>
+          </button>
         </div>
 
         <!-- Atur Margin F4 -->
@@ -275,7 +281,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           TextColor,
           Indent,
           TabKey,
-          LineHeight
+          LineHeight,
+          ParagraphSpacing
         } = window.TipTap;
 
         let initialDoc = null;
@@ -313,7 +320,8 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
             TextColor,
             Indent,
             TabKey,
-            LineHeight
+            LineHeight,
+            ParagraphSpacing
           ],
           content: initialDoc,
           autofocus: true
@@ -395,20 +403,42 @@ function renderTemplateEditorPage({ template = null, settings = {} }) {
           btnOutdent.onclick = () => editor.chain().focus().outdent().run();
         }
 
-        // Jarak Spasi Baris (Diterapkan ke teks/paragraf yang dipilih)
+        // Jarak Spasi Baris & Hilangkan Space (Diterapkan ke teks/paragraf yang dipilih)
         const paperContainer = document.getElementById('f4-paper-container');
         const selectLineSpacing = document.getElementById('select-line-spacing');
+        const btnToggleNoSpacing = document.getElementById('btn-toggle-no-spacing');
+
+        if (btnToggleNoSpacing) {
+          btnToggleNoSpacing.onclick = () => {
+            if (editor && editor.commands && editor.commands.toggleNoSpacing) {
+              editor.chain().focus().toggleNoSpacing().run();
+            }
+          };
+        }
+
         if (selectLineSpacing && paperContainer) {
           selectLineSpacing.onchange = (e) => {
             const val = e.target.value;
-            // 1. Terapkan spasi baris ke teks/paragraf yang sedang dipilih
-            if (editor && editor.commands && editor.commands.setLineHeight) {
-              editor.chain().focus().setLineHeight(val).run();
+            if (val === 'tight') {
+              if (editor && editor.commands && editor.commands.setNoSpacing) {
+                editor.chain().focus().setNoSpacing(true).run();
+              } else if (editor && editor.commands && editor.commands.setLineHeight) {
+                editor.chain().focus().setLineHeight('1.0').run();
+              }
+              paperContainer.style.setProperty('--paper-line-height', '1.0');
+              const pm = paperContainer.querySelector('.ProseMirror');
+              if (pm) pm.style.lineHeight = '1.0';
+            } else {
+              if (editor && editor.commands && editor.commands.setLineHeight) {
+                editor.chain().focus().setLineHeight(val).run();
+              }
+              if (editor && editor.commands && editor.commands.setNoSpacing) {
+                editor.chain().focus().setNoSpacing(false).run();
+              }
+              paperContainer.style.setProperty('--paper-line-height', val);
+              const pm = paperContainer.querySelector('.ProseMirror');
+              if (pm) pm.style.lineHeight = val;
             }
-            // 2. Set fallback line-height pada kertas
-            paperContainer.style.setProperty('--paper-line-height', val);
-            const pm = paperContainer.querySelector('.ProseMirror');
-            if (pm) pm.style.lineHeight = val;
           };
         }
 

@@ -278,6 +278,29 @@
   text-align: inherit;
 }
 
+/* Hilangkan Space Paragraf (0 pt space) */
+.ProseMirror p.no-spacing,
+.ProseMirror h1.no-spacing,
+.ProseMirror h2.no-spacing,
+.ProseMirror h3.no-spacing,
+.ProseMirror p[data-no-spacing="true"],
+.ProseMirror h1[data-no-spacing="true"],
+.ProseMirror h2[data-no-spacing="true"],
+.ProseMirror h3[data-no-spacing="true"],
+.ProseMirror > *.no-spacing,
+.ProseMirror > *[data-no-spacing="true"] {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ProseMirror > * + *.no-spacing,
+.ProseMirror > * + *[data-no-spacing="true"],
+.ProseMirror > *.no-spacing + *.no-spacing,
+.ProseMirror > *[data-no-spacing="true"] + *[data-no-spacing="true"] {
+  margin-top: 0 !important;
+}
+
+
 .ProseMirror h1 {
   font-size: 18pt;
   font-weight: 800;

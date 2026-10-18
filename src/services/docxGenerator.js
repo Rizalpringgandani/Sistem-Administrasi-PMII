@@ -46,21 +46,27 @@ async function generateDocxFromTipTap({ docData, settings, includeKop = true }) 
   }
 
   let lineSpacingVal = 360; // Default 1.5 baris standar PMII
+  let isDocTight = false;
   if (docData && docData.line_spacing) {
     const spacingMap = {
       '1.0': 240,
       '1.15': 276,
       '1.5': 360,
-      '2.0': 480
+      '2.0': 480,
+      'tight': 240,
+      '1.0-tight': 240
     };
     if (spacingMap[docData.line_spacing]) {
       lineSpacingVal = spacingMap[docData.line_spacing];
+    }
+    if (docData.line_spacing === 'tight' || docData.line_spacing === '1.0-tight') {
+      isDocTight = true;
     }
   }
 
   if (tiptapJson && Array.isArray(tiptapJson.content)) {
     for (const node of tiptapJson.content) {
-      const docxNode = convertTipTapNodeToDocx(node, lineSpacingVal);
+      const docxNode = convertTipTapNodeToDocx(node, lineSpacingVal, isDocTight);
       if (docxNode) {
         if (Array.isArray(docxNode)) {
           children.push(...docxNode);
@@ -414,7 +420,7 @@ function createKopSuratDocx(settings) {
 /**
  * Konversi satu node TipTap ke komponen docx
  */
-function convertTipTapNodeToDocx(node, lineSpacing = 360) {
+function convertTipTapNodeToDocx(node, lineSpacing = 360, isDocTight = false) {
   if (!node) return null;
 
   switch (node.type) {
@@ -425,7 +431,12 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
       const fontSize = level === 1 ? 32 : level === 2 ? 28 : 24;
       const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
       const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
-      const nodeLineSpacing = node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing;
+      const isNoSpacing = (node.attrs && (node.attrs.noSpacing === true || node.attrs.noSpacing === 'true' || node.attrs.lineHeight === 'tight' || node.attrs.lineHeight === '1.0-tight')) || (isDocTight && (!node.attrs || node.attrs.noSpacing !== false));
+      const spacingAfter = isNoSpacing ? 0 : 100;
+      const spacingBefore = isNoSpacing ? 0 : 180;
+      const nodeLineSpacing = isNoSpacing
+        ? (node.attrs && node.attrs.lineHeight && node.attrs.lineHeight !== 'tight' && node.attrs.lineHeight !== '1.0-tight' ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : 240)
+        : (node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing);
 
       // Beri style bold pada heading dengan font Arial Narrow
       textRuns.forEach(r => {
@@ -437,7 +448,7 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
       return new Paragraph({
         alignment: align,
         indent: indentOpt,
-        spacing: { before: 180, after: 100, line: nodeLineSpacing },
+        spacing: { before: spacingBefore, after: spacingAfter, line: nodeLineSpacing },
         children: textRuns
       });
     }
@@ -447,12 +458,17 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
       const textRuns = parseTextRuns(node.content);
       const indentLevel = node.attrs && node.attrs.indent ? parseInt(node.attrs.indent, 10) : 0;
       const indentOpt = indentLevel > 0 ? { left: indentLevel * 720 } : undefined;
-      const nodeLineSpacing = node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing;
+      const isNoSpacing = (node.attrs && (node.attrs.noSpacing === true || node.attrs.noSpacing === 'true' || node.attrs.lineHeight === 'tight' || node.attrs.lineHeight === '1.0-tight')) || (isDocTight && (!node.attrs || node.attrs.noSpacing !== false));
+      const spacingAfter = isNoSpacing ? 0 : 120;
+      const spacingBefore = isNoSpacing ? 0 : undefined;
+      const nodeLineSpacing = isNoSpacing
+        ? (node.attrs && node.attrs.lineHeight && node.attrs.lineHeight !== 'tight' && node.attrs.lineHeight !== '1.0-tight' ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : 240)
+        : (node.attrs && node.attrs.lineHeight ? Math.round(parseFloat(node.attrs.lineHeight) * 240) : lineSpacing);
 
       return new Paragraph({
         alignment: align,
         indent: indentOpt,
-        spacing: { after: 120, line: nodeLineSpacing },
+        spacing: { before: spacingBefore, after: spacingAfter, line: nodeLineSpacing },
         children: textRuns.length ? textRuns : [new TextRun('')]
       });
     }
@@ -533,7 +549,7 @@ function convertTipTapNodeToDocx(node, lineSpacing = 360) {
 
               if (Array.isArray(tc.content)) {
                 for (const child of tc.content) {
-                  const p = convertTipTapNodeToDocx(child);
+                  const p = convertTipTapNodeToDocx(child, lineSpacing, isDocTight);
                   if (p && !Array.isArray(p)) cellParagraphs.push(p);
                 }
               }
