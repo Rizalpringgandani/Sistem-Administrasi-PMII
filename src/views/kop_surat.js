@@ -23,7 +23,10 @@ function renderKopSuratHtml(settings = {}) {
   const email = settings.email_rayon ? `Email : ${escapeHtml(settings.email_rayon)}` : '';
   const kontakStr = [kontak, email].filter(Boolean).join('  ');
   const kodeWilayah = escapeHtml(settings.kode_wilayah || 'V-02');
-  const logoPmii = settings.logo_pmii || '/img/pmii-logo.png';
+  let logoPmii = settings.logo_pmii || '/img/pmii-logo.png';
+  if (logoPmii.endsWith('.svg')) {
+    logoPmii = '/img/pmii-logo.png';
+  }
   const logoRayon = settings.logo_rayon || logoPmii;
   const namaRayonPendek = escapeHtml((settings.nama_rayon || 'Rayon FEB').replace(/^PENGURUS\s+RAYON\s+/i, ''));
   const namaKomisariat = escapeHtml(settings.nama_komisariat || '');
@@ -32,15 +35,15 @@ function renderKopSuratHtml(settings = {}) {
     <div class="kop-surat-header" style="padding-bottom: 2px; margin-bottom: 16px;">
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
         <!-- Kiri: Logo PMII & Kode Wilayah -->
-        <div style="width: 88px; text-align: center; flex-shrink: 0;">
-          <img src="${logoPmii}" alt="Logo PMII" style="width: 70px; height: auto; max-height: 94px; object-fit: contain; display: block; margin: 0 auto;">
-          <div style="font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; font-weight: bold; font-size: 11pt; color: #51A0D8; margin-top: 3px; letter-spacing: 0.5px;">
+        <div style="width: 105px; text-align: center; flex-shrink: 0;">
+          <img src="${logoPmii}" alt="Logo PMII" style="width: 86px; height: auto; max-height: 118px; object-fit: contain; display: block; margin: 0 auto;">
+          <div style="font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; font-weight: bold; font-size: 11pt; color: #51A0D8; margin-top: 2px; letter-spacing: 0.5px;">
             ${kodeWilayah}
           </div>
         </div>
 
         <!-- Tengah: Teks Identitas Resmi PMII (#51A0D8, spasi 1.0) -->
-        <div style="flex: 1; text-align: center; color: #51A0D8; font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; line-height: 1.08;">
+        <div style="flex: 1; text-align: center; color: #51A0D8; font-family: 'Arial Narrow', 'Liberation Sans Narrow', Arial, sans-serif; line-height: 1.08; padding: 0 4px;">
           <div style="font-size: 13pt; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 1px;">
             ${kopTingkat}
           </div>
@@ -65,8 +68,8 @@ function renderKopSuratHtml(settings = {}) {
         </div>
 
         <!-- Kanan: Logo Rayon / Komisariat (Hanya logo saja, tanpa teks di bawahnya) -->
-        <div style="width: 88px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-          <img src="${logoRayon}" alt="Logo Rayon" style="width: 76px; height: auto; max-height: 94px; object-fit: contain; display: block; margin: 0 auto;">
+        <div style="width: 120px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+          <img src="${logoRayon}" alt="Logo Rayon" style="width: 115px; height: auto; max-height: 128px; object-fit: contain; display: block; margin: 0 auto;">
         </div>
       </div>
 

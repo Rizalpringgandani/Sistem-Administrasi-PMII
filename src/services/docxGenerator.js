@@ -173,9 +173,18 @@ function createKopSuratDocx(settings) {
   const namaRayonPendek = (settings.nama_rayon || 'Rayon FEB').replace(/^PENGURUS\s+RAYON\s+/i, '');
 
   // 1. Logo Kiri: Logo PMII
-  let pmiiLogoPath = path.join(__dirname, '../../public/img/pmii-logo.png');
+  let pmiiLogoPath = null;
+  if (settings.logo_pmii && (settings.logo_pmii.endsWith('.png') || settings.logo_pmii.endsWith('.jpg') || settings.logo_pmii.endsWith('.jpeg'))) {
+    const customPath = path.join(__dirname, '../../public', settings.logo_pmii.replace(/^\//, ''));
+    if (fs.existsSync(customPath)) pmiiLogoPath = customPath;
+  }
+  if (!pmiiLogoPath) {
+    const defaultPmiiPath = path.join(__dirname, '../../public/img/pmii-logo.png');
+    if (fs.existsSync(defaultPmiiPath)) pmiiLogoPath = defaultPmiiPath;
+  }
+
   let leftCellChildren = [];
-  if (fs.existsSync(pmiiLogoPath)) {
+  if (pmiiLogoPath && fs.existsSync(pmiiLogoPath)) {
     try {
       leftCellChildren.push(
         new Paragraph({
@@ -184,7 +193,7 @@ function createKopSuratDocx(settings) {
           children: [
             new ImageRun({
               data: fs.readFileSync(pmiiLogoPath),
-              transformation: { width: 68, height: 90 }
+              transformation: { width: 88, height: 118 }
             })
           ]
         })
@@ -308,14 +317,16 @@ function createKopSuratDocx(settings) {
 
   // 3. Logo Kanan: Logo Rayon / Komisariat
   let rayonLogoPath = null;
-  if (settings.logo_rayon && fs.existsSync(path.join(__dirname, '../../public', settings.logo_rayon))) {
-    rayonLogoPath = path.join(__dirname, '../../public', settings.logo_rayon);
-  } else if (fs.existsSync(pmiiLogoPath)) {
+  if (settings.logo_rayon && (settings.logo_rayon.endsWith('.png') || settings.logo_rayon.endsWith('.jpg') || settings.logo_rayon.endsWith('.jpeg'))) {
+    const customRayonPath = path.join(__dirname, '../../public', settings.logo_rayon.replace(/^\//, ''));
+    if (fs.existsSync(customRayonPath)) rayonLogoPath = customRayonPath;
+  }
+  if (!rayonLogoPath && pmiiLogoPath) {
     rayonLogoPath = pmiiLogoPath;
   }
 
   let rightCellChildren = [];
-  if (rayonLogoPath) {
+  if (rayonLogoPath && fs.existsSync(rayonLogoPath)) {
     try {
       rightCellChildren.push(
         new Paragraph({
@@ -324,7 +335,7 @@ function createKopSuratDocx(settings) {
           children: [
             new ImageRun({
               data: fs.readFileSync(rayonLogoPath),
-              transformation: { width: 75, height: 75 }
+              transformation: { width: 112, height: 112 }
             })
           ]
         })
@@ -351,17 +362,17 @@ function createKopSuratDocx(settings) {
       new TableRow({
         children: [
           new TableCell({
-            width: { size: 15, type: WidthType.PERCENTAGE },
+            width: { size: 17, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: leftCellChildren.length ? leftCellChildren : [new Paragraph({})]
           }),
           new TableCell({
-            width: { size: 70, type: WidthType.PERCENTAGE },
+            width: { size: 66, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: centerCellChildren
           }),
           new TableCell({
-            width: { size: 15, type: WidthType.PERCENTAGE },
+            width: { size: 17, type: WidthType.PERCENTAGE },
             borders: noBorder,
             children: rightCellChildren.length ? rightCellChildren : [new Paragraph({})]
           })
